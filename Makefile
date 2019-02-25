@@ -5,9 +5,9 @@ CC = g++
 CFLAGS = -c -O0 -std=c++11 -g
 LDFLAGS = -pthread
 
-SOURCES = 						\
-	main.cpp					\
-	LZSSFactory.cpp 				\
+SOURCES =							\
+	main.cpp						\
+	LZSSFactory.cpp					\
 	Helper/Helper.cpp				\
 	CPUST/CPUSingleThreadLZSS.cpp
 
