@@ -1,7 +1,9 @@
 BINDIR = bin
 EXECUTABLE = lzss
 
-CC = g++
+GCC = g++
+NVCC = nvcc
+
 CFLAGS = -c -O0 -std=c++11 -g
 LDFLAGS = -pthread
 
@@ -17,7 +19,22 @@ OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 TARGET = $(BINDIR)/$(EXECUTABLE)
 
 .PHONY: all
-all: clean $(TARGET)
+all:
+	@echo "Specify a target (cpu or gpu)!"
+
+.PHONY: cpu-cc
+cpu-cc:
+	$(eval CC = $(GCC))
+
+.PHONY: cpu
+cpu: cpu-cc clean $(TARGET)
+
+.PHONY: gpu-cc
+gpu-cc:
+	$(eval CC = $(NVCC))
+
+.PHONY: gpu
+gpu: gpu-cc clean $(TARGET)
 
 $(OBJECTS): %.o : %.cpp
 	$(CC) $(CFLAGS) -o $@ $<
