@@ -9,7 +9,9 @@ SOURCES =							\
 	main.cpp						\
 	LZSSFactory.cpp					\
 	Helper/Helper.cpp				\
-	CPUST/CPUSingleThreadLZSS.cpp
+	CPU/BlockHelper.cpp				\
+	CPU/ST/CPUSingleThreadLZSS.cpp	\
+	CPU/MT/CPUMultiThreadLZSS.cpp
 
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 TARGET = $(BINDIR)/$(EXECUTABLE)
