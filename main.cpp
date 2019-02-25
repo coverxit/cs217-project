@@ -79,7 +79,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     printf("Ratio:     %10.6f\n", (float) inSize / totalOutSize);
 
     double elapsed = end.tv_sec - beg.tv_sec + (end.tv_nsec - beg.tv_nsec) / 1.0e9;
-    printf("Time:      %10.6fs\n", elapsed);
+    printf("Time:      %10.6f s\n", elapsed);
 
     delete[] outBuf;
     delete[] flagBlocks;
@@ -138,7 +138,7 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     printf("Ratio:     %10.6f\n", (float) outSize / inSize);
 
     double elapsed = end.tv_sec - beg.tv_sec + (end.tv_nsec - beg.tv_nsec) / 1.0e9;
-    printf("Time:      %10.6fs\n", elapsed);
+    printf("Time:      %10.6f s\n", elapsed);
 
     delete[] flagBlocks;
     delete[] outBuf;
