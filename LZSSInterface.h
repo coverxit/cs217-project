@@ -8,7 +8,8 @@ struct CompressedFileHeader {
 struct CompressFlagBlock {
     uint8_t Flags[DataBlockSize / 8];
     uint16_t NumOfFlags;
-    uint16_t CompressedSize; // Not written to file
+    uint16_t CompressedSize;
+    uint16_t CompressedOffset; // Not written to file, used during decompression
 
     CompressFlagBlock()
     {
@@ -24,8 +25,10 @@ public:
         uint8_t* outBuf, int& outSize,
         CompressFlagBlock* flagOut, int& flagSize)
         = 0;
-        
-    virtual bool decompress(const uint8_t* inBuf, int inSize, uint8_t* outBuf, int& outSize) = 0;
+
+    virtual bool decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
+        const uint8_t* inBuf, int inSize, uint8_t* outBuf)
+        = 0;
 
 public:
     // Factory method

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <atomic>
 #include <iostream>
 #include <memory>
@@ -18,26 +19,22 @@
 
 #include "Settings.h"
 
+#include "Helper/Helper.h"
+#include "LZSSInterface.h"
+
 #include "ConcurrentStream/ConcurrentStream.hpp"
 #include "ConcurrentStream/ConcurrentInputStream.hpp"
 #include "ConcurrentStream/ConcurrentOutputStream.hpp"
 
-#include "LZSSInterface.h"
-#include "Helper/Helper.h"
-
 void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* outFile)
 {
     auto outBuf = new uint8_t[inSize];
-    int outSize;
 
     auto nFlagBlocks = (inSize - 1) / DataBlockSize + 1;
     auto flagBlocks = new CompressFlagBlock[nFlagBlocks];
-    int flagSize;
-
-    CompressedFileHeader header = {
-        0x53535747, // GWSS
-        inSize
-    };
+    
+    CompressedFileHeader header { DefaultMagic, inSize };
+    int outSize, flagSize;
 
     if (lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, flagSize)) {
         std::vector<std::pair<int, int>> offsets;
@@ -49,6 +46,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
 
             for (int i = 0, offset = 0; i < nFlagBlocks; ++i) {
                 outStream.writeNext((uint8_t*)&flagBlocks[i].NumOfFlags, sizeof(CompressFlagBlock::NumOfFlags), 1);
+                outStream.writeNext((uint8_t*)&flagBlocks[i].CompressedSize, sizeof(CompressFlagBlock::CompressedSize), 1);
                 outStream.writeNext(flagBlocks[i].Flags, SIZE_OF_FLAGS(flagBlocks[i].NumOfFlags), 1);
 
                 offsets.push_back(std::make_pair(offset, DataBlockSize * i));
@@ -62,13 +60,61 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
         }
     }
 
+    std::cout << "In: " << inSize << " bytes" << std::endl;
+    std::cout << "Out: " << outSize << " bytes" << std::endl;
+    std::cout << "Header: " << flagSize + sizeof(CompressedFileHeader) << " bytes" << std::endl;
+    std::cout << "Ratio: " << (float)outSize / inSize << std::endl;
+
     delete[] outBuf;
     delete[] flagBlocks;
 }
 
 void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* outFile)
 {
+    CompressedFileHeader header = *(CompressedFileHeader*)inBuf;
 
+    if (header.Magic != DefaultMagic) {
+        std::cerr << "Magic mismtach (0x" << std::hex << header.Magic;
+        std::cerr << " != 0x" << std::hex << DefaultMagic << ")!" << std::endl;
+        return;
+    }
+
+    auto outSize = header.OriginalSize;
+    auto nFlagBlocks = (outSize - 1) / DataBlockSize + 1;
+    auto flagBlocks = new CompressFlagBlock[nFlagBlocks];
+    auto offset = sizeof(CompressedFileHeader);
+
+    for (int i = 0, dataOffset = 0; i < nFlagBlocks; ++i) {
+        flagBlocks[i].NumOfFlags = *(uint16_t*)(inBuf + offset);
+        offset += sizeof(CompressFlagBlock::NumOfFlags);
+
+        flagBlocks[i].CompressedSize = *(uint16_t*)(inBuf + offset);
+        offset += sizeof(CompressFlagBlock::CompressedSize);
+
+        flagBlocks[i].CompressedOffset = dataOffset;
+        memcpy(flagBlocks[i].Flags, inBuf + offset, SIZE_OF_FLAGS(flagBlocks[i].NumOfFlags));
+
+        offset += SIZE_OF_FLAGS(flagBlocks[i].NumOfFlags);
+        dataOffset += flagBlocks[i].CompressedSize;
+    }
+
+    auto outBuf = new uint8_t[outSize];
+    if (lzss->decompress(flagBlocks, nFlagBlocks, inBuf + offset, inSize - offset, outBuf)) {
+        ConcurrentOutputStream outStream(outFile, outSize);
+
+        if (outStream) {
+            outStream.writeNext(outBuf, outSize, std::thread::hardware_concurrency());
+            outStream.close();
+        }
+    }
+
+    std::cout << "Header: " << offset << " bytes" << std::endl;
+    std::cout << "In: " << inSize - offset << " bytes" << std::endl;
+    std::cout << "Out: " << outSize << " bytes" << std::endl;
+    std::cout << "Ratio: " << (float) outSize / (inSize - offset) << std::endl;
+
+    delete[] flagBlocks;
+    delete[] outBuf;
 }
 
 int main(int argc, char const* argv[])

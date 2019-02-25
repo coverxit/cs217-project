@@ -5,11 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) Launch Compression",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/lzss",
-            "args": [ "cs", "GPLv3.txt", "GPLv3.compressed" ],
+            "args": [ "cs", "examples/GPLv3.txt", "GPLv3.compressed" ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Launch Decompression",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/lzss",
+            "args": [ "ds", "GPLv3.compressed", "GPLv3.decompressed.txt" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

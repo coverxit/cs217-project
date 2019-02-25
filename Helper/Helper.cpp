@@ -1,5 +1,6 @@
 #include <algorithm>
 
+#include <assert.h>
 #include <stdint.h>
 
 #include "../Settings.h"
