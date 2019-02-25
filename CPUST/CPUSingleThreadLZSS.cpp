@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <unordered_map>
 
@@ -25,8 +26,6 @@ bool CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int inSize,
         auto blockSize = std::min(DataBlockSize, inSize - blockOffset);
 
         memcpy(blockBuf, inBuf + blockOffset, blockSize);
-        // Fill the remaining with a character that occurs often
-        memset(blockBuf + blockSize, ' ', DataBlockSize - blockSize);
 
         // The first character
         auto nFlags = 1;
@@ -48,6 +47,9 @@ bool CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int inSize,
                 // Convert offset to backward representation
                 matchOffset = lookbackLength - matchOffset;
 
+                assert(matchOffset > 0 && matchOffset <= lookbackLength && matchOffset <= WindowSize);
+                assert(matchLength >= ReplaceThreshold && matchLength <= lookaheadLength);
+
                 // Due to the bit limit, minus 1 for exact 2048 bytes window and 32 bytes length
                 PairType matchPair = ((matchOffset - 1) << PairLengthBits) | (matchLength - 1);
                 memcpy(outBuf + blockOffset + written, &matchPair, sizeof(PairType));
@@ -64,6 +66,7 @@ bool CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int inSize,
             }
 
             ++nFlags;
+            assert(nFlags <= DataBlockSize);
         }
 
         flagOut[i].NumOfFlags = (uint16_t)nFlags;
@@ -73,6 +76,8 @@ bool CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int inSize,
         flagSize += SIZE_OF_FLAGS(nFlags) + sizeof(CompressFlagBlock::NumOfFlags)
             + sizeof(CompressFlagBlock::CompressedSize);
         outSize += written;
+
+        std::cout << "Block " << (i + 1) << "/" << nBlocks << " done." << std::endl;
     }
 
     return true;
@@ -83,8 +88,6 @@ bool CPUSingleThreadLZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
 {
     for (int i = 0; i < nFlagBlocks; ++i) {
         uint8_t blockBuf[DataBlockSize];
-        // Fill the remaining with a character that occurs often
-        memset(blockBuf, ' ', DataBlockSize);
 
         auto inOffset = flagIn[i].CompressedOffset;
         auto outOffset = i * DataBlockSize;

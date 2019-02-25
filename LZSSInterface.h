@@ -9,7 +9,8 @@ struct CompressFlagBlock {
     uint8_t Flags[DataBlockSize / 8];
     uint16_t NumOfFlags;
     uint16_t CompressedSize;
-    uint16_t CompressedOffset; // Not written to file, used during decompression
+    uint32_t CompressedOffset; // Not written to file, used during decompression.
+                               // Type should be changed, if file size limit raise.
 
     CompressFlagBlock()
     {
