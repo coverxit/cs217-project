@@ -60,10 +60,13 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
         }
     }
 
+    auto headerSize = flagSize + sizeof(CompressedFileHeader);
+    auto totalOutSize = outSize + headerSize;
+
     std::cout << "In: " << inSize << " bytes" << std::endl;
-    std::cout << "Out: " << outSize << " bytes" << std::endl;
-    std::cout << "Header: " << flagSize + sizeof(CompressedFileHeader) << " bytes" << std::endl;
-    std::cout << "Ratio: " << (float)outSize / inSize << std::endl;
+    std::cout << "Out: " << totalOutSize << " bytes (Header: ";
+    std::cout << headerSize << " bytes, Content: " << outSize << " bytes)" << std::endl;
+    std::cout << "Ratio: " << ((float)totalOutSize / inSize) << std::endl;
 
     delete[] outBuf;
     delete[] flagBlocks;
@@ -108,10 +111,10 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
         }
     }
 
-    std::cout << "Header: " << offset << " bytes" << std::endl;
-    std::cout << "In: " << inSize - offset << " bytes" << std::endl;
+    std::cout << "In: " << inSize << " bytes (Header: ";
+    std::cout << offset << " bytes, Content: " << (inSize - offset) << " bytes)" << std::endl;
     std::cout << "Out: " << outSize << " bytes" << std::endl;
-    std::cout << "Ratio: " << (float) outSize / (inSize - offset) << std::endl;
+    std::cout << "Ratio: " << (float) outSize / inSize << std::endl;
 
     delete[] flagBlocks;
     delete[] outBuf;
