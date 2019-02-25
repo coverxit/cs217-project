@@ -66,7 +66,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     std::cout << "In: " << inSize << " bytes" << std::endl;
     std::cout << "Out: " << totalOutSize << " bytes (Header: ";
     std::cout << headerSize << " bytes, Content: " << outSize << " bytes)" << std::endl;
-    std::cout << "Ratio: " << ((float)totalOutSize / inSize) << std::endl;
+    std::cout << "Ratio: " << ((float)inSize / totalOutSize) << std::endl;
 
     delete[] outBuf;
     delete[] flagBlocks;

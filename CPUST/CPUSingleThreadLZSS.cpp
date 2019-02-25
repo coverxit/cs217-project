@@ -50,7 +50,7 @@ bool CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int inSize,
                 assert(matchOffset > 0 && matchOffset <= lookbackLength && matchOffset <= WindowSize);
                 assert(matchLength >= ReplaceThreshold && matchLength <= lookaheadLength);
 
-                // Due to the bit limit, minus 1 for exact 2048 bytes window and 32 bytes length
+                // Due to the bit limit, minus 1 for exact offset and length
                 PairType matchPair = ((matchOffset - 1) << PairLengthBits) | (matchLength - 1);
                 memcpy(outBuf + blockOffset + written, &matchPair, sizeof(PairType));
                 written += sizeof(PairType);
