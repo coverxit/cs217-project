@@ -101,7 +101,7 @@ protected:
         }
 
         if (offsets.size() != sizes.size()) {
-            fprintf(stderr, "[%s] Number of offsets (%d) and sizes (%d) mismatch!\n",
+            fprintf(stderr, "[%s] Number of offsets (%lu) and sizes (%lu) mismatch!\n",
                 m_name, offsets.size(), sizes.size());
             return 0;
         }
