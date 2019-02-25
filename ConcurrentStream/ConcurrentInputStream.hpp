@@ -18,14 +18,13 @@ public:
         }
 
         if (!S_ISREG(buf.st_mode)) {
-            std::cerr << "[ConcurrentInputStream] " << name << "is not a regluar file." << std::endl;
+            fprintf(stderr, "[ConcurrentInputStream] %s is not a regular file.\n", name);
             goto cleanup;
         }
 
         if (buf.st_size > MaxFileSize) {
-            std::cerr << "[ConcurrentInputStream] " << name << "'s size (" << buf.st_size << " bytes)";
-            std::cerr << " is larger than supported (" << MaxFileSize << " bytes).";
-            std::cerr << std::endl;
+            fprintf(stderr, "[ConcurrentInputStream] %s's size (%ld bytes) is larger than allowed (%d bytes)\n",
+                name, buf.st_size, MaxFileSize);
             goto cleanup;
         }
 

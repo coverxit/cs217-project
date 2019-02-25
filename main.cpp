@@ -1,12 +1,12 @@
 #include <algorithm>
 #include <atomic>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -49,6 +49,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
         ConcurrentOutputStream outStream(outFile, outSize + flagSize + sizeof(CompressedFileHeader));
 
         if (outStream) {
+            printf("Writing to file %s...\n", outFile);
             outStream.writeNext((uint8_t*)&header, sizeof(CompressedFileHeader), 1);
 
             for (int i = 0, offset = 0; i < nFlagBlocks; ++i) {
@@ -67,16 +68,18 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
         }
     }
 
-    auto headerSize = flagSize + sizeof(CompressedFileHeader);
+    auto headerSize = flagSize + (int)sizeof(CompressedFileHeader);
     auto totalOutSize = outSize + headerSize;
 
-    std::cout << "In: " << inSize << " bytes" << std::endl;
-    std::cout << "Out: " << totalOutSize << " bytes (Header: ";
-    std::cout << headerSize << " bytes, Content: " << outSize << " bytes)" << std::endl;
-    std::cout << "Ratio: " << ((float)inSize / totalOutSize) << std::endl;
+    printf("============== Statistics ==============\n");
+    printf("In:        %10d bytes\n", inSize);
+    printf("Out:       %10d bytes\n", totalOutSize);
+    printf("  Header:  %10d bytes\n", headerSize);
+    printf("  Content: %10d bytes\n", outSize);
+    printf("Ratio:     %10.6f\n", (float) inSize / totalOutSize);
 
     double elapsed = end.tv_sec - beg.tv_sec + (end.tv_nsec - beg.tv_nsec) / 1.0e9;
-    std::cout << "Time: " << elapsed << "s" << std::endl;
+    printf("Time:      %10.6fs\n", elapsed);
 
     delete[] outBuf;
     delete[] flagBlocks;
@@ -87,15 +90,14 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     CompressedFileHeader header = *(CompressedFileHeader*)inBuf;
 
     if (header.Magic != DefaultMagic) {
-        std::cerr << "Magic mismtach (0x" << std::hex << header.Magic;
-        std::cerr << " != 0x" << std::hex << DefaultMagic << ")!" << std::endl;
+        fprintf(stderr, "Magic mismatch (0x%x != 0x%x)!\n", header.Magic, DefaultMagic);
         return;
     }
 
     auto outSize = header.OriginalSize;
     auto nFlagBlocks = (outSize - 1) / DataBlockSize + 1;
     auto flagBlocks = new CompressFlagBlock[nFlagBlocks];
-    auto offset = sizeof(CompressedFileHeader);
+    int offset = sizeof(CompressedFileHeader);
 
     for (int i = 0, dataOffset = 0; i < nFlagBlocks; ++i) {
         flagBlocks[i].NumOfFlags = *(uint16_t*)(inBuf + offset);
@@ -122,18 +124,21 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
         ConcurrentOutputStream outStream(outFile, outSize);
 
         if (outStream) {
+            printf("Writing to file %s...\n", outFile);
             outStream.writeNext(outBuf, outSize, std::thread::hardware_concurrency());
             outStream.close();
         }
     }
 
-    std::cout << "In: " << inSize << " bytes (Header: ";
-    std::cout << offset << " bytes, Content: " << (inSize - offset) << " bytes)" << std::endl;
-    std::cout << "Out: " << outSize << " bytes" << std::endl;
-    std::cout << "Ratio: " << (float)outSize / inSize << std::endl;
+    printf("============== Statistics ==============\n");
+    printf("In:        %10d bytes\n", inSize);
+    printf("  Header:  %10d bytes\n", offset);
+    printf("  Content: %10d bytes\n", inSize - offset);
+    printf("Out:       %10d bytes\n", outSize);
+    printf("Ratio:     %10.6f\n", (float) outSize / inSize);
 
     double elapsed = end.tv_sec - beg.tv_sec + (end.tv_nsec - beg.tv_nsec) / 1.0e9;
-    std::cout << "Time: " << elapsed << "s" << std::endl;
+    printf("Time:      %10.6fs\n", elapsed);
 
     delete[] flagBlocks;
     delete[] outBuf;
@@ -144,20 +149,20 @@ int main(int argc, char const* argv[])
     char operation = 0, kernel = 0;
 
     if (argc != 4) {
-        std::cout << "Usage: " << argv[0] << "<options> <input file> <output file>" << std::endl;
-        std::cout << "Available options:" << std::endl;
-        std::cout << "  Operation:" << std::endl;
-        std::cout << "    c - compress" << std::endl;
-        std::cout << "    d - decompress" << std::endl;
-        std::cout << "  Kernel:" << std::endl;
-        std::cout << "    s - CPU single-thread" << std::endl;
-        std::cout << "    m - CPU multi-thread" << std::endl;
-        std::cout << "    g - GPU CUDA" << std::endl;
+        printf("Usage: %s <options> <input file> <output file>\n", argv[0]);
+        printf("Available options:\n");
+        printf("  Operation:\n");
+        printf("    c - compress\n");
+        printf("    d - decompress\n");
+        printf("  Kernel:\n");
+        printf("    s - CPU single-thread\n");
+        printf("    m - CPU multi-thread\n");
+        printf("    g - GPU CUDA\n");
         return 1;
     }
 
     if (strlen(argv[1]) != 2) {
-        std::cout << "You must specify two options (one for operation, another for kernel)!" << std::endl;
+        fprintf(stderr, "You must specify two options (one for operation, another for kernel)!\n");
         return 1;
     }
 
@@ -167,21 +172,21 @@ int main(int argc, char const* argv[])
             if (operation == 0) {
                 operation = opt;
             } else {
-                std::cout << "Only one operation is allowed at the same time!" << std::endl;
+                fprintf(stderr, "Only one operation is allowed at the same time!\n");
                 return 1;
             }
         } else if (opt == 's' || opt == 'm' || opt == 'g') {
             if (kernel == 0) {
                 kernel = opt;
             } else {
-                std::cout << "Only one kernel is allowed at the same time!" << std::endl;
+                fprintf(stderr, "Only one kernel is allowed at the same time!\n");
                 return 1;
             }
         }
     }
 
     if (operation == 0 || kernel == 0) {
-        std::cout << "You must specify two options (one for operation, another for kernel)!" << std::endl;
+        fprintf(stderr, "You must specify two options (one for operation, another for kernel)!\n");
         return 1;
     }
 

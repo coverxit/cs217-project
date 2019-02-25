@@ -1,8 +1,8 @@
 #include <functional>
-#include <iostream>
 #include <string>
 #include <unordered_map>
 
+#include <stdio.h>
 #include <memory.h>
 #include <stdint.h>
 
@@ -24,7 +24,7 @@ bool CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int inSize,
         blockCompress(i, inBuf, inSize, outBuf, outSize, flagOut, flagSize,
             [nBlocks](int blockId) {
                 if ((blockId + 1) % 100 == 0) {
-                    std::cout << "Block " << (blockId + 1) << "/" << nBlocks << " done." << std::endl;
+                    printf("Block %d/%d done.\n", blockId + 1, nBlocks);
                 }
             });
     }

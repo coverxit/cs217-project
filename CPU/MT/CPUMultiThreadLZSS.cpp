@@ -1,11 +1,11 @@
 #include <atomic>
-#include <iostream>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 
+#include <stdio.h>
 #include <memory.h>
 #include <stdint.h>
 
@@ -55,7 +55,7 @@ bool CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int inSize,
 
                         if (atomicBlocksDone % 100 == 0) {
                             outputMutex.lock();
-                            std::cout << "Block " << atomicBlocksDone << "/" << nBlocks << " done." << std::endl;
+                            printf("Block %d/%d done.\n", atomicBlocksDone.load(), nBlocks);
                             outputMutex.unlock();
                         }
                     });

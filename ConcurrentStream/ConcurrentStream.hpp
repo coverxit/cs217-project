@@ -49,14 +49,12 @@ protected:
     int concurrentCopy(uint8_t* dst, const uint8_t* src, int size, int nThreads)
     {
         if (m_fd < 0) {
-            std::cerr << "[" << m_name << "] File not opened." << std::endl;
+            fprintf(stderr, "[%s] File not opened.\n", m_name);
             return 0;
         }
 
         if (m_reader && size < m_size) {
-            std::cerr << "[" << m_name << "] Buffer too small (" << size << " bytes)";
-            std::cerr << ", expected (" << m_size << " bytes).";
-            std::cerr << std::endl;
+            fprintf(stderr, "[%s] Buffer too small (%d bytes), expected %d bytes.\n", m_name, size, m_size);
             return 0;
         }
 
@@ -98,12 +96,13 @@ protected:
         std::atomic_int size(0);
 
         if (m_fd < 0) {
-            std::cerr << "[" << m_name << "] File not opened." << std::endl;
+            fprintf(stderr, "[%s] File not opened.\n", m_name);
             return 0;
         }
 
         if (offsets.size() != sizes.size()) {
-            std::cerr << "[" << m_name << "] Number of offsets and sizes mismatch!" << std::endl;
+            fprintf(stderr, "[%s] Number of offsets (%d) and sizes (%d) mismatch!\n",
+                m_name, offsets.size(), sizes.size());
             return 0;
         }
 
