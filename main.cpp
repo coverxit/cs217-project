@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -23,6 +24,7 @@
 #include "LZSSInterface.h"
 
 #include "ConcurrentStream/ConcurrentStream.hpp"
+
 #include "ConcurrentStream/ConcurrentInputStream.hpp"
 #include "ConcurrentStream/ConcurrentOutputStream.hpp"
 
@@ -32,11 +34,16 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
 
     auto nFlagBlocks = (inSize - 1) / DataBlockSize + 1;
     auto flagBlocks = new CompressFlagBlock[nFlagBlocks];
-    
-    CompressedFileHeader header { DefaultMagic, inSize };
+
+    CompressedFileHeader header{ DefaultMagic, inSize };
     int outSize, flagSize;
 
-    if (lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, flagSize)) {
+    struct timespec beg, end;
+    clock_gettime(CLOCK_MONOTONIC, &beg);
+    auto success = lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, flagSize);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    if (success) {
         std::vector<std::pair<int, int>> offsets;
         std::vector<int> sizes;
         ConcurrentOutputStream outStream(outFile, outSize + flagSize + sizeof(CompressedFileHeader));
@@ -67,6 +74,9 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     std::cout << "Out: " << totalOutSize << " bytes (Header: ";
     std::cout << headerSize << " bytes, Content: " << outSize << " bytes)" << std::endl;
     std::cout << "Ratio: " << ((float)inSize / totalOutSize) << std::endl;
+
+    double elapsed = end.tv_sec - beg.tv_sec + (end.tv_nsec - beg.tv_nsec) / 1.0e9;
+    std::cout << "Time: " << elapsed << "s" << std::endl;
 
     delete[] outBuf;
     delete[] flagBlocks;
@@ -102,7 +112,13 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     }
 
     auto outBuf = new uint8_t[outSize];
-    if (lzss->decompress(flagBlocks, nFlagBlocks, inBuf + offset, inSize - offset, outBuf)) {
+
+    struct timespec beg, end;
+    clock_gettime(CLOCK_MONOTONIC, &beg);
+    auto success = lzss->decompress(flagBlocks, nFlagBlocks, inBuf + offset, inSize - offset, outBuf);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    if (success) {
         ConcurrentOutputStream outStream(outFile, outSize);
 
         if (outStream) {
@@ -114,7 +130,10 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     std::cout << "In: " << inSize << " bytes (Header: ";
     std::cout << offset << " bytes, Content: " << (inSize - offset) << " bytes)" << std::endl;
     std::cout << "Out: " << outSize << " bytes" << std::endl;
-    std::cout << "Ratio: " << (float) outSize / inSize << std::endl;
+    std::cout << "Ratio: " << (float)outSize / inSize << std::endl;
+
+    double elapsed = end.tv_sec - beg.tv_sec + (end.tv_nsec - beg.tv_nsec) / 1.0e9;
+    std::cout << "Time: " << elapsed << "s" << std::endl;
 
     delete[] flagBlocks;
     delete[] outBuf;
