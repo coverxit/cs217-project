@@ -4,7 +4,7 @@ EXECUTABLE = lzss
 GCC = g++
 NVCC = nvcc
 
-CFLAGS = -c -O0 -std=c++11 -g
+CFLAGS = -c -O3 -std=c++11 -g
 LDFLAGS = -pthread
 
 SOURCES =							\
