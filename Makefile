@@ -5,10 +5,10 @@ CC = g++
 CFLAGS = -c -O0 -std=c++11 -g
 LDFLAGS = -pthread
 
-SOURCES = main.cpp                                \
-          LZSSFactory.cpp                         \
-          Helper/Helper.cpp                       \
-          CPUST/CPUSingleThreadLZSS.cpp
+SOURCES = main.cpp 								\
+		  LZSSFactory.cpp 						\
+		  Helper/Helper.cpp						\
+		  CPUST/CPUSingleThreadLZSS.cpp
 
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 TARGET = $(BINDIR)/$(EXECUTABLE)
@@ -17,15 +17,15 @@ TARGET = $(BINDIR)/$(EXECUTABLE)
 all: clean $(TARGET)
 
 $(OBJECTS): %.o : %.cpp
-    $(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $<
 
 $(TARGET): $(OBJECTS) | $(BINDIR)
-    $(CC) $(LDFLAGS) -o $@ $(OBJECTS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS)
 
 $(BINDIR):
-    mkdir -p $@
+	mkdir -p $@
 
 .PHONY: clean
 clean:
-    rm -f $(OBJECTS)
-    rm -rf $(BINDIR)
+	rm -f $(OBJECTS)
+	rm -rf $(BINDIR)
