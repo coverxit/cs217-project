@@ -15,13 +15,18 @@
 #include "../MatchHelper/MatchHelper.h"
 #include "CUDALZSS.h"
 
-#define cudaCheckError(op, msg) \
-    do { cudaError_t ret = (op); if ((ret) != cudaSuccess) _gerror((ret), (msg)); } while (false)
+#define cudaCheckError(op, msg)    \
+    do {                           \
+        cudaError_t ret = (op);    \
+        if ((ret) != cudaSuccess)  \
+            _gerror((ret), (msg)); \
+    } while (false)
 
 #define MIN(a, b) \
     ((a) < (b) ? (a) : (b))
 
-inline void _gerror(cudaError_t cudaError, const char* msg) {
+inline void _gerror(cudaError_t cudaError, const char* msg)
+{
     fprintf(stderr, "%s, cudaError = %d\n", msg, cudaError);
     exit(-1);
 }
@@ -29,7 +34,7 @@ inline void _gerror(cudaError_t cudaError, const char* msg) {
 __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     uint8_t* deviceOutBuf, int* deviceOutSize,
     CompressFlagBlock* deviceFlagOut, int nFlagBlocks, int* deviceFlagSize,
-    int *deviceNumBlocksDone)
+    int* deviceNumBlocksDone)
 {
     __shared__ uint8_t blockBuf[DataBlockSize];
     __shared__ PairType blockFlags[DataBlockSize];
@@ -56,7 +61,7 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
         int matchOffset, matchLength;
 
         if (FindMatch(blockBuf + t - lookbackLength, lookbackLength,
-            blockBuf + t, lookaheadLength, matchOffset, matchLength)) {
+                blockBuf + t, lookaheadLength, matchOffset, matchLength)) {
 
             // Convert offset to backward representation
             matchOffset = lookbackLength - matchOffset;
@@ -73,8 +78,8 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     if (threadId == 0) {
         compressBlock.CompressedSize = 0;
         compressBlock.NumOfFlags = 0;
-        
-        for (int i = 0; i < blockSize; ) {
+
+        for (int i = 0; i < blockSize;) {
             if (blockFlags[i] == 0) {
                 deviceOutBuf[blockOffset + compressBlock.CompressedSize] = blockBuf[i];
                 ++compressBlock.CompressedSize;
@@ -98,8 +103,8 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
         memcpy(deviceFlagOut + blockId, &compressBlock, sizeof(CompressFlagBlock));
 
         // taken by current flag block
-        atomicAdd(deviceFlagSize, SIZE_OF_FLAGS(compressBlock.NumOfFlags) + sizeof(CompressFlagBlock::NumOfFlags)
-            + sizeof(CompressFlagBlock::CompressedSize));
+        atomicAdd(deviceFlagSize, SIZE_OF_FLAGS(compressBlock.NumOfFlags) 
+            + sizeof(CompressFlagBlock::NumOfFlags) + sizeof(CompressFlagBlock::CompressedSize));
         atomicAdd(deviceOutSize, compressBlock.CompressedSize);
 
         // Fetch and add
@@ -117,26 +122,26 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     Timer timer(false);
 
     uint8_t *deviceInBuf, *deviceOutBuf;
-    CompressFlagBlock *deviceFlagOut;
+    CompressFlagBlock* deviceFlagOut;
     int *deviceOutSize, *deviceFlagSize, *deviceNumBlocksDone;
 
     // Allocate ----------------------------------
     printf("Allocating device variables...\n");
-    cudaCheckError(cudaMalloc((void**) &deviceInBuf, inSize), "Failed to allocate deviceInBuf");
+    cudaCheckError(cudaMalloc((void**)&deviceInBuf, inSize), "Failed to allocate deviceInBuf");
 
-    cudaCheckError(cudaMalloc((void**) &deviceOutBuf, outSize), "Failed to allocate deviceOutBuf");
-    cudaCheckError(cudaMalloc((void**) &deviceOutSize, sizeof(int)), "Failed to allocate deviceOutSize");
+    cudaCheckError(cudaMalloc((void**)&deviceOutBuf, outSize), "Failed to allocate deviceOutBuf");
+    cudaCheckError(cudaMalloc((void**)&deviceOutSize, sizeof(int)), "Failed to allocate deviceOutSize");
 
-    cudaCheckError(cudaMalloc((void**) &deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks), 
+    cudaCheckError(cudaMalloc((void**)&deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks),
         "Failed to allocate deviceFlagOut");
-    cudaCheckError(cudaMalloc((void**) &deviceFlagSize, sizeof(int)), "Failed to allocate deviceFlagSize");
-    cudaCheckError(cudaMalloc((void**) &deviceNumBlocksDone, sizeof(int)), "Failed to allocate deviceNumBlocksDone");
+    cudaCheckError(cudaMalloc((void**)&deviceFlagSize, sizeof(int)), "Failed to allocate deviceFlagSize");
+    cudaCheckError(cudaMalloc((void**)&deviceNumBlocksDone, sizeof(int)), "Failed to allocate deviceNumBlocksDone");
 
     // Copy: host to device -----------------------
     printf("Copying data from host to device...\n");
-    cudaCheckError(cudaMemcpy(deviceInBuf, inBuf, inSize, cudaMemcpyHostToDevice), 
+    cudaCheckError(cudaMemcpy(deviceInBuf, inBuf, inSize, cudaMemcpyHostToDevice),
         "Failed to copy deviceInBuf to device");
-    cudaCheckError(cudaMemset(deviceFlagOut, 0, sizeof(CompressFlagBlock) * nFlagBlocks), 
+    cudaCheckError(cudaMemset(deviceFlagOut, 0, sizeof(CompressFlagBlock) * nFlagBlocks),
         "Failed to set deviceFlagOut to 0");
     cudaDeviceSynchronize();
 
@@ -144,9 +149,9 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     printf("Launching kernel...\n");
 
     timer.begin();
-    CompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceInBuf, inSize, 
-        deviceOutBuf, deviceOutSize, 
-        deviceFlagOut, nFlagBlocks, deviceFlagSize, 
+    CompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceInBuf, inSize,
+        deviceOutBuf, deviceOutSize,
+        deviceFlagOut, nFlagBlocks, deviceFlagSize,
         deviceNumBlocksDone);
     auto elapsed = timer.end();
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
@@ -158,12 +163,12 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaCheckError(cudaMemcpy(&flagSize, deviceFlagSize, sizeof(int), cudaMemcpyDeviceToHost),
         "Failed to copy deviceFlagSize to host");
 
-    cudaCheckError(cudaMemcpy(outBuf, deviceOutBuf, outSize, cudaMemcpyDeviceToHost), 
+    cudaCheckError(cudaMemcpy(outBuf, deviceOutBuf, outSize, cudaMemcpyDeviceToHost),
         "Failed to copy deviceOutBuf to host");
     cudaCheckError(cudaMemcpy(flagOut, deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks, cudaMemcpyDeviceToHost),
         "Failed to copy deviceFlagOut to host");
     cudaDeviceSynchronize();
-    
+
     cudaFree(deviceInBuf);
     cudaFree(deviceOutBuf);
     cudaFree(deviceOutSize);
