@@ -39,8 +39,12 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 
     printf("Allocating device variables...\n");
     cudaCheckError(cudaMalloc((void**) &deviceInBuf, inSize), "Failed to allocate deviceInBuf");
+
     cudaCheckError(cudaMalloc((void**) &deviceOutBuf, outSize), "Failed to allocate deviceOutBuf");
     cudaCheckError(cudaMalloc((void**) &deviceOutSize, sizeof(int)), "Failed to allocate deviceOutSize");
+
+    cudaCheckError(cudaMalloc((void**) &deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks), 
+        "Failed to allocate deviceFlagOut");
     cudaCheckError(cudaMalloc((void**) &deviceFlagSize, sizeof(int)), "Failed to allocate deviceFlagSize");
 
     printf("Copying data from host to device...\n");
