@@ -122,12 +122,12 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     }
 
     printf("============== Statistics ==============\n");
-    printf("In:        %10d bytes\n", inSize);
-    printf("  Header:  %10d bytes\n", offset);
-    printf("  Content: %10d bytes\n", inSize - offset);
-    printf("Out:       %10d bytes\n", outSize);
-    printf("Ratio:     %10.6f\n", (float) outSize / inSize);
-    printf("Time:      %10.6f s\n", retVal.second);
+    printf("In:            %10d bytes\n", inSize);
+    printf(" - Header:     %10d bytes\n", offset);
+    printf(" - Content:    %10d bytes\n", inSize - offset);
+    printf("Out:           %10d bytes\n", outSize);
+    printf("Ratio:         %10.6f\n", (float) outSize / inSize);
+    printf("Time (Kernel): %10.6f s\n", retVal.second);
 
     delete[] flagBlocks;
     delete[] outBuf;
