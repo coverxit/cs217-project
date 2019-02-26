@@ -14,11 +14,7 @@
 
 #include "../MatchHelper/MatchHelper.h"
 #include "CUDALZSS.h"
-
-__global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
-    uint8_t* deviceOutBuf, int* deviceOutSize,
-    CompressFlagBlock* deviceFlagOut, int nFlagBlocks, int* deviceFlagSize,
-    int* deviceNumBlocksDone);
+#include "Kernel.h"
 
 #define cudaCheckError(op, msg)    \
     do {                           \
