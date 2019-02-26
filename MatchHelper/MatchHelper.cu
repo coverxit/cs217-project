@@ -15,6 +15,10 @@ bool FindMatch(const uint8_t* searchBuf, int searchBufSize,
     matchOffset = -1;
     matchLength = 0;
 
+    if (searchBuf == matchBuffer) {
+        return false;
+    }
+
     for (int i = 0; i < searchBufSize; ++i) {
         int currentLength = 0;
 

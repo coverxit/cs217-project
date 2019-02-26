@@ -24,15 +24,8 @@ void blockCompress(int blockId,
 
     memcpy(blockBuf, inBuf + blockOffset, blockSize);
 
-    // The first character
-    auto nFlags = 1;
-    auto written = 1;
-
-    PUT_BIT(flagOut[blockId].Flags, 0, 0);
-    outBuf[blockOffset] = blockBuf[0];
-
-    // Later on
-    for (int j = 1; j < blockSize;) {
+    int nFlags = 0, written = 0;
+    for (int j = 0; j < blockSize;) {
         auto lookbackLength = std::min(WindowSize, j);
         auto lookaheadLength = std::min(MaxEncodeLength, blockSize - j);
         int matchOffset, matchLength;
