@@ -5,21 +5,25 @@
 #include <unordered_map>
 #include <vector>
 
-#include <stdio.h>
 #include <memory.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <time.h>
 
 #include "../../Settings.h"
 
 #include "../../LZSSInterface.h"
+#include "../../TimerHelper.hpp"
 
 #include "../BlockHelper.h"
 #include "CPUMultiThreadLZSS.h"
 
-bool CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int inSize,
+std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int inSize,
     uint8_t* outBuf, int& outSize,
     CompressFlagBlock* flagOut, int& flagSize)
 {
+    Timer timer;
+    
     auto nBlocks = (inSize - 1) / DataBlockSize + 1;
     std::atomic_int atomicOutSize(0), atomicFlagSize(0), atomicBlocksDone(0);
     std::mutex outputMutex;
@@ -72,12 +76,15 @@ bool CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int inSize,
 
     outSize = atomicOutSize;
     flagSize = atomicFlagSize;
-    return true;
+
+    return std::make_pair(true, timer.end());
 }
 
-bool CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
+std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
     const uint8_t* inBuf, int inSize, uint8_t* outBuf)
 {
+    Timer timer;
+    
     auto nThreads = std::thread::hardware_concurrency();
 
     // Too many threads?
@@ -110,5 +117,5 @@ bool CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
         t.join();
     }
 
-    return true;
+    return std::make_pair(true, timer.end());
 }

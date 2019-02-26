@@ -2,21 +2,25 @@
 #include <string>
 #include <unordered_map>
 
-#include <stdio.h>
 #include <memory.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <time.h>
 
 #include "../../Settings.h"
 
 #include "../../LZSSInterface.h"
+#include "../../TimerHelper.hpp"
 
 #include "../BlockHelper.h"
 #include "CPUSingleThreadLZSS.h"
 
-bool CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int inSize,
+std::pair<bool, double> CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int inSize,
     uint8_t* outBuf, int& outSize,
     CompressFlagBlock* flagOut, int& flagSize)
 {
+    Timer timer;
+
     auto nBlocks = (inSize - 1) / DataBlockSize + 1;
     outSize = flagSize = 0;
 
@@ -29,15 +33,17 @@ bool CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int inSize,
             });
     }
 
-    return true;
+    return std::make_pair(true, timer.end());
 }
 
-bool CPUSingleThreadLZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
+std::pair<bool, double> CPUSingleThreadLZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
     const uint8_t* inBuf, int inSize, uint8_t* outBuf)
 {
+    Timer timer;
+
     for (int i = 0; i < nFlagBlocks; ++i) {
         blockDecompress(i, flagIn, nFlagBlocks, inBuf, inSize, outBuf);
     }
 
-    return true;
+    return std::make_pair(true, timer.end());
 }

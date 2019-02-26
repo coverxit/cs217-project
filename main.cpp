@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <time.h>
 
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -38,12 +37,8 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     CompressedFileHeader header{ DefaultMagic, inSize };
     int outSize, flagSize;
 
-    struct timespec beg, end;
-    clock_gettime(CLOCK_MONOTONIC, &beg);
-    auto success = lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, flagSize);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-
-    if (success) {
+    auto retVal = lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, flagSize);
+    if (retVal.first) {
         std::vector<std::pair<int, int>> offsets;
         std::vector<int> sizes;
         ConcurrentOutputStream outStream(outFile, outSize + flagSize + sizeof(CompressedFileHeader));
@@ -77,9 +72,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     printf("  Header:  %10d bytes\n", headerSize);
     printf("  Content: %10d bytes\n", outSize);
     printf("Ratio:     %10.6f\n", (float) inSize / totalOutSize);
-
-    double elapsed = end.tv_sec - beg.tv_sec + (end.tv_nsec - beg.tv_nsec) / 1.0e9;
-    printf("Time:      %10.6f s\n", elapsed);
+    printf("Time:      %10.6f s\n", retVal.second);
 
     delete[] outBuf;
     delete[] flagBlocks;
@@ -114,13 +107,8 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     }
 
     auto outBuf = new uint8_t[outSize];
-
-    struct timespec beg, end;
-    clock_gettime(CLOCK_MONOTONIC, &beg);
-    auto success = lzss->decompress(flagBlocks, nFlagBlocks, inBuf + offset, inSize - offset, outBuf);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-
-    if (success) {
+    auto retVal = lzss->decompress(flagBlocks, nFlagBlocks, inBuf + offset, inSize - offset, outBuf);
+    if (retVal.first) {
         ConcurrentOutputStream outStream(outFile, outSize);
 
         if (outStream) {
@@ -136,9 +124,7 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     printf("  Content: %10d bytes\n", inSize - offset);
     printf("Out:       %10d bytes\n", outSize);
     printf("Ratio:     %10.6f\n", (float) outSize / inSize);
-
-    double elapsed = end.tv_sec - beg.tv_sec + (end.tv_nsec - beg.tv_nsec) / 1.0e9;
-    printf("Time:      %10.6f s\n", elapsed);
+    printf("Time:      %10.6f s\n", retVal.second);
 
     delete[] flagBlocks;
     delete[] outBuf;
