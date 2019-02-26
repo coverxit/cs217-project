@@ -92,7 +92,7 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
                 compressBlock.CompressedSize += sizeof(PairType);
 
                 PUT_BIT(compressBlock.Flags, compressBlock.NumOfFlags, 1);
-                i += matchLength;
+                i += blockFlags[i * 2 + 1];
             }
 
             ++compressBlock.NumOfFlags;
