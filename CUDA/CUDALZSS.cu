@@ -34,7 +34,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     Timer timer(false);
 
     uint8_t *deviceInBuf, *deviceOutBuf;
-    CompressFlagBlock *deivceFlagOut;
+    CompressFlagBlock *deviceFlagOut;
     int *deviceOutSize, *deviceFlagSize;
 
     printf("Allocating device variables...\n");
@@ -58,7 +58,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaCheckError(cudaMemcpy(&flagSize, deviceFlagSize, sizeof(int), cudaMemcpyDeviceToHost),
         "Failed to copy memory to host");
 
-    cudaCheckError(cudaMemcpy(outBuf, deviceOutBuf, outSize), "Failed to copy memory to host");
+    cudaCheckError(cudaMemcpy(outBuf, deviceOutBuf, outSize, cudaMemcpyDeviceToHost), "Failed to copy memory to host");
     cudaCheckError(cudaMemcpy(flagOut, deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks, cudaMemcpyDeviceToHost),
         "Failed to copy memory to host");
     
