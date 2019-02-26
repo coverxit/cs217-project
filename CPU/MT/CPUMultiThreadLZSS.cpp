@@ -48,7 +48,7 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int i
             int tempOutSize = 0, tempFlagSize = 0;
 
             for (int j = offset; j < offset + length; ++j) {
-                blockCompress(j, inBuf, inSize, outBuf, tempOutSize, flagOut, tempFlagSize,
+                BlockCompress(j, inBuf, inSize, outBuf, tempOutSize, flagOut, tempFlagSize,
                     [nFlagBlocks, &atomicBlocksDone](int blockId) {
                         // Fetch and add
                         auto fetch = atomicBlocksDone.fetch_add(1) + 1;
@@ -102,7 +102,7 @@ std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn
 
         threads.emplace_back([&, offset, length]() {
             for (int j = offset; j < offset + length; ++j) {
-                blockDecompress(j, flagIn, inBuf, outBuf);
+                BlockDecompress(j, flagIn, inBuf, outBuf);
             }
         });
     }
