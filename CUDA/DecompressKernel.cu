@@ -32,7 +32,8 @@ __global__ void DecompressKernel(CompressFlagBlock* deviceFlagIn, int nFlagBlock
                 ++outOffset;
             } else {
                 // Replacement pair
-                PairType matchPair = *(uint16_t*)&deviceInBuf[inOffset];
+                PairType matchPair;
+                memcpy(&matchPair, deviceInBuf + inOffset, sizeof(PairType));
 
                 // Plus 1 for the opposite operation in compression
                 auto matchOffset = (matchPair >> PairLengthBits) + 1;

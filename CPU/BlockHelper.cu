@@ -81,7 +81,8 @@ void BlockDecompress(int blockId,
             ++outOffset;
         } else {
             // Replacement pair
-            PairType matchPair = *(uint16_t*)&inBuf[inOffset];
+            PairType matchPair;
+            memcpy(&matchPair, inBuf + inOffset, sizeof(PairType));
 
             // Plus 1 for the opposite operation in compression
             auto matchOffset = (matchPair >> PairLengthBits) + 1;
