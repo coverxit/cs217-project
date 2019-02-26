@@ -160,9 +160,7 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFla
 
     cudaFree(deviceInBuf);
     cudaFree(deviceOutBuf);
-    cudaFree(deviceOutSize);
-    cudaFree(deviceFlagOut);
-    cudaFree(deviceFlagSize);
+    cudaFree(deviceFlagIn);
 
     timer.begin();
     //DecompressKernel<<<,>>>();
