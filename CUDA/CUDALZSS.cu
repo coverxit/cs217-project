@@ -37,7 +37,7 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     int* deviceNumBlocksDone)
 {
     __shared__ uint8_t blockBuf[DataBlockSize];
-    __shared__ PairType blockFlags[DataBlockSize];
+    __shared__ PairType blockFlags[DataBlockSize * 2];
     __shared__ CompressFlagBlock compressBlock;
 
     auto threadId = threadIdx.x;
@@ -65,12 +65,11 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
 
             // Convert offset to backward representation
             matchOffset = lookbackLength - matchOffset;
-
-            // Due to the bit limit, minus 1 for exact offset and length
-            blockFlags[t] = ((matchOffset - 1) << PairLengthBits) | (matchLength - 1);
-        } else {
-            blockFlags[t] = 0;
         }
+
+        // matchOffset & matchLength has been preset in FindMatch, if no match found.
+        blockFlags[t * 2] = matchOffset;
+        blockFlags[t * 2 + 1] = matchLength;
     }
     __syncthreads();
 
@@ -80,17 +79,16 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
         compressBlock.NumOfFlags = 0;
 
         for (int i = 0; i < blockSize;) {
-            if (blockFlags[i] == 0) {
+            if (blockFlags[i * 2 + 1] == 0) {
                 deviceOutBuf[blockOffset + compressBlock.CompressedSize] = blockBuf[i];
                 ++compressBlock.CompressedSize;
 
                 PUT_BIT(compressBlock.Flags, compressBlock.NumOfFlags, 0);
                 i += 1;
             } else {
-                // Plus 1 for the opposite operation in compression
-                auto matchLength = (blockFlags[i] & (MaxEncodeLength - 1)) + 1;
-
-                memcpy(deviceOutBuf + blockOffset + compressBlock.CompressedSize, &blockFlags[i], sizeof(PairType));
+                // Due to the bit limit, minus 1 for exact offset and length
+                PairType matchPair = ((blockFlags[i * 2] - 1) << PairLengthBits) | (blockFlags[i * 2 + 1] - 1);
+                memcpy(deviceOutBuf + blockOffset + compressBlock.CompressedSize, &matchPair, sizeof(PairType));
                 compressBlock.CompressedSize += sizeof(PairType);
 
                 PUT_BIT(compressBlock.Flags, compressBlock.NumOfFlags, 1);
