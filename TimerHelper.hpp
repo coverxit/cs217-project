@@ -2,8 +2,15 @@
 
 class Timer {
 public:
-    inline Timer() { clock_gettime(CLOCK_MONOTONIC, &m_begin); }
-    
+    inline explicit Timer(bool begin = true)
+    {
+        if (begin) {
+            clock_gettime(CLOCK_MONOTONIC, &m_begin);
+        }
+    }
+
+    inline void begin() { clock_gettime(CLOCK_MONOTONIC, &m_begin); }
+
     inline double end()
     {
         clock_gettime(CLOCK_MONOTONIC, &m_end);

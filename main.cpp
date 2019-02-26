@@ -192,7 +192,15 @@ int main(int argc, char const* argv[])
                 break;
 
             case 'g':
+#ifdef GCC_TARGET
+                fprintf(stderr, "Please compile with target `nvcc` to launch CUDA kernel!\n");
+                
+                delete[] inBuf;
+                inStream.close();
+                return 1;
+#else
                 lzss = AbstractLZSS::create("CUDA");
+#endif
                 break;
             }
 

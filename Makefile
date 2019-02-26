@@ -8,7 +8,8 @@ CFLAGS = -c -O3 -std=c++11 -g
 GCC_LDFLAGS = -pthread
 NVCC_LDFLAGS = -Xcompiler="-pthread"
 
-TARGET = $(BINDIR)/$(EXECUTABLE)
+GCC_TARGET = $(BINDIR)/$(EXECUTABLE)_gcc
+NVCC_TARGET = $(BINDIR)/$(EXECUTABLE)_nvcc
 
 CPP_SOURCES =						\
 	main.cpp						\
@@ -16,45 +17,53 @@ CPP_SOURCES =						\
 	CPU/ST/CPUSingleThreadLZSS.cpp	\
 	CPU/MT/CPUMultiThreadLZSS.cpp
 
-CU_SOURCES =						\
+COMMON_SOURCES =					\
 	MatchHelper/MatchHelper.cu		\
 	CPU/BlockHelper.cu
 
+CUDA_SOURCES =						\
+	CUDA/CUDALZSS.cu
+
 CPP_OBJECTS = $(patsubst %.cpp,%.o,$(CPP_SOURCES))
-CU_OBJECTS = $(patsubst %.cu,%.o,$(CU_SOURCES))
+COMMON_OBJECTS = $(patsubst %.cu,%.o,$(COMMON_SOURCES))
+CUDA_OBJECTS = $(patsubst %.cu,%.o,$(CUDA_SOURCES))
 
 .PHONY: all
 all:
-	@echo "Specify a target (cpu or gpu)!"
+	@echo "Specify a target (gcc or nvcc)!"
 
-.PHONY: cpu-cc
-cpu-cc:
+.PHONY: gcc-setup
+gcc-setup:
 	$(eval CC = $(GCC))
-	$(eval CFLAGS = -x c++ $(CFLAGS))
+	$(eval CFLAGS = -x c++ -DGCC_TARGET $(CFLAGS))
 	$(eval LDFLAGS = $(GCC_LDFLAGS))
 
-.PHONY: cpu
-cpu: clean cpu-cc $(TARGET)
+.PHONY: gcc
+gcc: clean gcc-setup $(GCC_TARGET)
 
-.PHONY: gpu-cc
-gpu-cc:
+.PHONY: nvcc-setup
+nvcc-setup:
 	$(eval CC = $(NVCC))
 	$(eval LDFLAGS = $(NVCC_LDFLAGS))
 
-.PHONY: gpu
-gpu: clean gpu-cc $(TARGET)
+.PHONY: nvcc
+nvcc: clean nvcc-setup $(NVCC_TARGET)
 	
 %.o: %.cpp
-	@echo 'compiling cpp:' $<
+	@echo '[$(CC)] compiling cpp:' $<
 	@$(CC) $(CFLAGS) -o $@ $<
 
 %.o: %.cu
-	@echo 'compiling cu:' $<
+	@echo '[$(CC)] compiling cu:' $<
 	@$(CC) $(CFLAGS) -o $@ $<
 
-$(TARGET): $(BINDIR) $(CPP_OBJECTS) $(CU_OBJECTS)
-	@echo 'linking:' $@
-	@$(CC) $(LDFLAGS) -o $@ $(CPP_OBJECTS) $(CU_OBJECTS)
+$(GCC_TARGET): $(BINDIR) $(CPP_OBJECTS) $(COMMON_OBJECTS)
+	@echo '[$(CC)] linking:' $@
+	@$(CC) $(LDFLAGS) -o $@ $(CPP_OBJECTS) $(COMMON_OBJECTS)
+
+$(NVCC_TARGET): $(BINDIR) $(CPP_OBJECTS) $(COMMON_OBJECTS) $(CUDA_OBJECTS)
+	@echo '[$(CC)] linking:' $@
+	@$(CC) $(LDFLAGS) -o $@ $(CPP_OBJECTS) $(COMMON_OBJECTS) $(CUDA_OBJECTS)
 
 $(BINDIR):
 	@echo 'mkdir:' $@
@@ -64,5 +73,6 @@ $(BINDIR):
 clean:
 	@echo 'cleaning...'
 	@rm -f $(CPP_OBJECTS)
-	@rm -f $(CU_OBJECTS)
+	@rm -f $(COMMON_OBJECTS)
+	@rm -f $(CUDA_SOURCES)
 	@rm -rf $(BINDIR)

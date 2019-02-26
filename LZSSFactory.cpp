@@ -18,7 +18,10 @@ AbstractLZSS* AbstractLZSS::create(const char* type)
     } else if (!strcmp(type, "CPUMT")) {
         return new CPUMultiThreadLZSS;
     } else if (!strcmp(type, "CUDA")) {
+#ifdef GCC_TARGET
         return nullptr;
-        //return new CUDALZSS;
+#else
+        return new CUDALZSS;
+#endif
     }
 }

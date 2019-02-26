@@ -6,7 +6,7 @@
         {
             "label": "Build",
             "type": "shell",
-            "command": "make cpu",
+            "command": "make gcc",
             "group": {
                 "kind": "build",
                 "isDefault": true
