@@ -31,8 +31,7 @@ void blockCompress(int blockId,
         int matchOffset, matchLength;
 
         if (FindMatch(blockBuf + j - lookbackLength, lookbackLength,
-                blockBuf + j, lookaheadLength,
-                matchOffset, matchLength)) {
+                blockBuf + j, lookaheadLength, matchOffset, matchLength)) {
 
             // Convert offset to backward representation
             matchOffset = lookbackLength - matchOffset;
