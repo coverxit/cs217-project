@@ -105,7 +105,7 @@ std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn
 
         threads.emplace_back([&, offset, length]() {
             for (int j = offset; j < offset + length; ++j) {
-                blockDecompress(j, flagIn, nFlagBlocks, inBuf, inSize, outBuf);
+                blockDecompress(j, flagIn, inBuf, inSize, outBuf);
             }
         });
     }

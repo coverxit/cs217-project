@@ -38,7 +38,7 @@ std::pair<bool, double> CPUSingleThreadLZSS::decompress(CompressFlagBlock* flagI
     Timer timer;
 
     for (int i = 0; i < nFlagBlocks; ++i) {
-        blockDecompress(i, flagIn, nFlagBlocks, inBuf, inSize, outBuf);
+        blockDecompress(i, flagIn, inBuf, inSize, outBuf);
     }
 
     return std::make_pair(true, timer.end());
