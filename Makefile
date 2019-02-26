@@ -22,7 +22,7 @@ COMMON_SOURCES =					\
 	CPU/BlockHelper.cu
 
 CUDA_SOURCES =						\
-	CUDA/CUDALZSS.cu
+	CUDA/CUDALZSS.cu				\
 	CUDA/CompressKernel.cu
 
 CPP_OBJECTS = $(patsubst %.cpp,%.o,$(CPP_SOURCES))
