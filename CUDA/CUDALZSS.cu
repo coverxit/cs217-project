@@ -28,7 +28,8 @@ inline void _gerror(cudaError_t cudaError, const char* msg) {
 
 __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     uint8_t* deviceOutBuf, int* deviceOutSize,
-    CompressFlagBlock* deviceFlagOut, int nFlagBlocks, int* deviceFlagSize)
+    CompressFlagBlock* deviceFlagOut, int nFlagBlocks, int* deviceFlagSize,
+    int *deviceNumBlocksDone)
 {
     __shared__ uint8_t blockBuf[DataBlockSize];
     __shared__ PairType blockFlags[DataBlockSize];
@@ -101,7 +102,11 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
             + sizeof(CompressFlagBlock::CompressedSize));
         atomicAdd(deviceOutSize, compressBlock.CompressedSize);
 
-        printf("Block %d/%d done.\n", blockId, nFlagBlocks);
+        // Fetch and add
+        auto numBlocksDone = atomicAdd(deviceNumBlocksDone, 1) + 1;
+        if (numBlocksDone % 100 == 0) {
+            printf("Block %d/%d done.\n", numBlocksDone, nFlagBlocks);
+        }
     }
 }
 
@@ -113,7 +118,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 
     uint8_t *deviceInBuf, *deviceOutBuf;
     CompressFlagBlock *deviceFlagOut;
-    int *deviceOutSize, *deviceFlagSize;
+    int *deviceOutSize, *deviceFlagSize, *deviceNumBlocksDone;
 
     // Allocate ----------------------------------
     printf("Allocating device variables...\n");
@@ -125,6 +130,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaCheckError(cudaMalloc((void**) &deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks), 
         "Failed to allocate deviceFlagOut");
     cudaCheckError(cudaMalloc((void**) &deviceFlagSize, sizeof(int)), "Failed to allocate deviceFlagSize");
+    cudaCheckError(cudaMalloc((void**) &deviceNumBlocksDone, sizeof(int)), "Failed to allocate deviceNumBlocksDone");
 
     // Copy: host to device -----------------------
     printf("Copying data from host to device...\n");
@@ -139,7 +145,9 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 
     timer.begin();
     CompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceInBuf, inSize, 
-        deviceOutBuf, deviceOutSize, deviceFlagOut, nFlagBlocks, deviceFlagSize);
+        deviceOutBuf, deviceOutSize, 
+        deviceFlagOut, nFlagBlocks, deviceFlagSize, 
+        deviceNumBlocksDone);
     auto elapsed = timer.end();
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
 
@@ -161,6 +169,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaFree(deviceOutSize);
     cudaFree(deviceFlagOut);
     cudaFree(deviceFlagSize);
+    cudaFree(deviceNumBlocksDone);
 
     return std::make_pair(true, elapsed);
 }
