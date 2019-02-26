@@ -110,7 +110,7 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     }
 
     auto outBuf = new uint8_t[outSize];
-    auto retVal = lzss->decompress(flagBlocks, nFlagBlocks, inBuf + offset, outBuf);
+    auto retVal = lzss->decompress(flagBlocks, nFlagBlocks, inBuf + offset, inSize - offset, outBuf, outSize);
     if (retVal.first) {
         ConcurrentOutputStream outStream(outFile, outSize);
 

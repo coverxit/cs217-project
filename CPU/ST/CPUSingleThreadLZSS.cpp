@@ -33,7 +33,7 @@ std::pair<bool, double> CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int 
 }
 
 std::pair<bool, double> CPUSingleThreadLZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
-    const uint8_t* inBuf, uint8_t* outBuf)
+    const uint8_t* inBuf, int inSize, uint8_t* outBuf, int outSize)
 {
     Timer timer;
 

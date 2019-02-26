@@ -23,7 +23,8 @@ COMMON_SOURCES =					\
 
 CUDA_SOURCES =						\
 	CUDA/CUDALZSS.cu				\
-	CUDA/CompressKernel.cu
+	CUDA/CompressKernel.cu			\
+	CUDA/DecompressKernel.cu
 
 CPP_OBJECTS = $(patsubst %.cpp,%.o,$(CPP_SOURCES))
 COMMON_OBJECTS = $(patsubst %.cu,%.o,$(COMMON_SOURCES))

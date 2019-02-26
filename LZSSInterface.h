@@ -23,11 +23,10 @@ public:
         = 0;
 
     virtual std::pair<bool, double> decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
-        const uint8_t* inBuf, uint8_t* outBuf)
+        const uint8_t* inBuf, int inSize, uint8_t* outBuf, int outSize)
         = 0;
 
 public:
     // Factory method
     static AbstractLZSS* create(const char* type);
 };
-
