@@ -11,11 +11,6 @@ struct CompressFlagBlock {
     uint16_t CompressedSize;
     uint32_t CompressedOffset; // Not written to file, used during decompression.
                                // Type should be changed, if file size limit raise.
-
-    CompressFlagBlock()
-    {
-        memset(Flags, 0, DataBlockSize / 8);
-    }
 };
 
 class AbstractLZSS {

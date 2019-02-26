@@ -30,11 +30,13 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
 
     auto nFlagBlocks = (inSize - 1) / DataBlockSize + 1;
     auto flagBlocks = new CompressFlagBlock[nFlagBlocks];
-
+    
     CompressedFileHeader header{ DefaultMagic, inSize };
     int outSize = inSize, flagSize;
 
     printf("Compressing...\n");
+    memset(flagBlocks, 0, sizeof(CompressFlagBlock) * nFlagBlocks);
+
     auto retVal = lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, nFlagBlocks, flagSize);
     if (retVal.first) {
         std::vector<std::pair<int, int>> offsets;
@@ -90,6 +92,8 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     auto nFlagBlocks = (outSize - 1) / DataBlockSize + 1;
     auto flagBlocks = new CompressFlagBlock[nFlagBlocks];
     int offset = sizeof(CompressedFileHeader);
+
+    memset(flagBlocks, 0, sizeof(CompressFlagBlock) * nFlagBlocks);
 
     for (int i = 0, dataOffset = 0; i < nFlagBlocks; ++i) {
         flagBlocks[i].NumOfFlags = *(uint16_t*)(inBuf + offset);
