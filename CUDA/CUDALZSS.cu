@@ -75,7 +75,7 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
         
         for (int i = 0; i < blockSize; ) {
             if (blockFlags[i] == 0) {
-                deviceOutBuf[blockOffset + written] = blockBuf[i];
+                deviceOutBuf[blockOffset + compressBlock.CompressedSize] = blockBuf[i];
                 ++compressBlock.CompressedSize;
 
                 PUT_BIT(compressBlock.Flags, compressBlock.NumOfFlags, 0);
@@ -84,7 +84,7 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
                 // Plus 1 for the opposite operation in compression
                 auto matchLength = (blockFlags[i] & (MaxEncodeLength - 1)) + 1;
 
-                memcpy(deviceOutBuf + blockOffset + written, &blockFlags[i], sizeof(PairType));
+                memcpy(deviceOutBuf + blockOffset + compressBlock.CompressedSize, &blockFlags[i], sizeof(PairType));
                 compressBlock.CompressedSize += sizeof(PairType);
 
                 PUT_BIT(compressBlock.Flags, compressBlock.NumOfFlags, 1);
@@ -97,7 +97,7 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
         memcpy(deviceFlagOut + blockId, &compressBlock, sizeof(CompressFlagBlock));
 
         // taken by current flag block
-        atomicAdd(deviceFlagSize, SIZE_OF_FLAGS(nFlags) + sizeof(CompressFlagBlock::NumOfFlags)
+        atomicAdd(deviceFlagSize, SIZE_OF_FLAGS(compressBlock.NumOfFlags) + sizeof(CompressFlagBlock::NumOfFlags)
             + sizeof(CompressFlagBlock::CompressedSize));
         atomicAdd(deviceOutSize, compressBlock.CompressedSize);
 
