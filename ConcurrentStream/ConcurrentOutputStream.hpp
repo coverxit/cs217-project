@@ -9,7 +9,7 @@ public:
         m_fd = open(name, O_RDWR | O_CREAT | O_TRUNC, 0666);
         if (m_fd < 0) {
             perror("[ConcurrentOutputStream] open");
-            return;
+            exit(-1);
         }
 
         if (ftruncate(m_fd, size) < 0) {
@@ -29,6 +29,7 @@ public:
     cleanup:
         ::close(m_fd);
         m_fd = -1;
+        exit(-1);
     }
 
     int write(int offset, const uint8_t* buf, int size, int nThreads)

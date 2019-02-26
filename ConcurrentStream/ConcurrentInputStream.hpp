@@ -8,7 +8,7 @@ public:
         m_fd = open(name, O_RDONLY);
         if (m_fd < 0) {
             perror("[ConcurrentInputStream] open");
-            return;
+            exit(-1);
         }
 
         struct stat64 buf;
@@ -41,6 +41,7 @@ public:
     cleanup:
         ::close(m_fd);
         m_fd = -1;
+        exit(-1);
     }
 
     int read(uint8_t* buf, int size, int nThreads)
