@@ -42,7 +42,7 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     auto threadId = threadIdx.x;
     auto blockId = blockIdx.x;
 
-    auto blockOffset = blockIdx.x * DataBlockSize;
+    auto blockOffset = blockId * DataBlockSize;
     auto blockSize = MIN(DataBlockSize, inSize - blockOffset);
 
     for (int t = threadId; t < blockSize; t += blockDim.x) {
@@ -157,7 +157,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaCheckError(cudaMemcpy(&flagSize, deviceFlagSize, sizeof(int), cudaMemcpyDeviceToHost),
         "Failed to copy deviceFlagSize to host");
 
-    cudaCheckError(cudaMemcpy(outBuf, deviceOutBuf, outSize, cudaMemcpyDeviceToHost),
+    cudaCheckError(cudaMemcpy(outBuf, deviceOutBuf, inSize, cudaMemcpyDeviceToHost),
         "Failed to copy deviceOutBuf to host");
     cudaCheckError(cudaMemcpy(flagOut, deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks, cudaMemcpyDeviceToHost),
         "Failed to copy deviceFlagOut to host");
