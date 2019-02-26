@@ -18,11 +18,9 @@ void blockCompress(int blockId,
     CompressFlagBlock* flagOut, int& flagSize,
     std::function<void(int)> finishCallback)
 {
-    uint8_t blockBuf[DataBlockSize];
     auto blockOffset = blockId * DataBlockSize;
     auto blockSize = std::min(DataBlockSize, inSize - blockOffset);
-
-    memcpy(blockBuf, inBuf + blockOffset, blockSize);
+    auto blockBuf = inBuf + blockOffset;
 
     int nFlags = 0, written = 0;
     for (int j = 0; j < blockSize;) {
