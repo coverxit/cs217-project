@@ -67,12 +67,12 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     auto totalOutSize = outSize + headerSize;
 
     printf("============== Statistics ==============\n");
-    printf("In:        %10d bytes\n", inSize);
-    printf("Out:       %10d bytes\n", totalOutSize);
-    printf("  Header:  %10d bytes\n", headerSize);
-    printf("  Content: %10d bytes\n", outSize);
-    printf("Ratio:     %10.6f\n", (float) inSize / totalOutSize);
-    printf("Time:      %10.6f s\n", retVal.second);
+    printf("In:            %10d bytes\n", inSize);
+    printf("Out:           %10d bytes\n", totalOutSize);
+    printf("    Header:    %10d bytes\n", headerSize);
+    printf("    Content:   %10d bytes\n", outSize);
+    printf("Ratio:         %10.6f\n", (float) inSize / totalOutSize);
+    printf("Time (Kernel): %10.6f s\n", retVal.second);
 
     delete[] outBuf;
     delete[] flagBlocks;
