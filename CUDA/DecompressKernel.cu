@@ -11,7 +11,7 @@
 #include "../LZSSInterface.h"
 
 // Minor difference to the implementation of BlockDecompress.
-__global__ void DecompressKernel(CompressFlagBlock* deviceFlagIn, int nFlagBlocks,
+__global__ void DecompressKernel(const uint8_t* deviceFlagIn, int nFlagBlocks,
     const uint8_t* deviceInBuf, uint8_t* deviceOutBuf)
 {
     CompressFlagBlock flagBlock;
@@ -21,7 +21,7 @@ __global__ void DecompressKernel(CompressFlagBlock* deviceFlagIn, int nFlagBlock
 
     // Manually byte-by-byte copy, otherwise misaligned memory access is triggered.
     auto copyOffestLocal = (uint8_t*)&flagBlock;
-    auto copyOffsetGlobal = (uint8_t*)deviceFlagIn + blockId * sizeof(CompressFlagBlock);
+    auto copyOffsetGlobal = deviceFlagIn + blockId * sizeof(CompressFlagBlock);
     for (int i = 0; i < sizeof(CompressFlagBlock); ++i) {
         *(copyOffestLocal++) = *(copyOffsetGlobal++);
     }

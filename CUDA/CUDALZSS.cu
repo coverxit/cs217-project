@@ -110,8 +110,7 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFla
 {
     Timer timer(false);
 
-    uint8_t *deviceInBuf, *deviceOutBuf;
-    CompressFlagBlock* deviceFlagIn;
+    uint8_t *deviceInBuf, *deviceOutBuf, *deviceFlagIn;
 
     // Allocate ----------------------------------
     printf("Allocating device variables... ");
