@@ -34,6 +34,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     CompressedFileHeader header{ DefaultMagic, inSize };
     int outSize, flagSize;
 
+    printf("Compressing...\n");
     auto retVal = lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, nFlagBlocks, flagSize);
     if (retVal.first) {
         std::vector<std::pair<int, int>> offsets;
@@ -79,6 +80,7 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
 {
     CompressedFileHeader header = *(CompressedFileHeader*)inBuf;
 
+    printf("Decompressing...\n");
     if (header.Magic != DefaultMagic) {
         fprintf(stderr, "Magic mismatch (0x%x != 0x%x)!\n", header.Magic, DefaultMagic);
         return;
