@@ -5,19 +5,20 @@ GCC = g++
 NVCC = nvcc
 
 CFLAGS = -c -O3 -std=c++11 -g
-LDFLAGS = -pthread
+GCC_LDFLAGS = -pthread
+NVCC_LDFLAGS = -Xcompiler="-pthread"
 
 TARGET = $(BINDIR)/$(EXECUTABLE)
 
 CPP_SOURCES =						\
 	main.cpp						\
 	LZSSFactory.cpp					\
-	CPU/BlockHelper.cpp				\
 	CPU/ST/CPUSingleThreadLZSS.cpp	\
 	CPU/MT/CPUMultiThreadLZSS.cpp
 
 CU_SOURCES =						\
-	MatchHelper/MatchHelper.cu
+	MatchHelper/MatchHelper.cu		\
+	CPU/BlockHelper.cu
 
 CPP_OBJECTS = $(patsubst %.cpp,%.o,$(CPP_SOURCES))
 CU_OBJECTS = $(patsubst %.cu,%.o,$(CU_SOURCES))
@@ -30,6 +31,7 @@ all:
 cpu-cc:
 	$(eval CC = $(GCC))
 	$(eval CFLAGS = -x c++ $(CFLAGS))
+	$(eval LDFLAGS = $(GCC_LDFLAGS))
 
 .PHONY: cpu
 cpu: clean cpu-cc $(TARGET)
@@ -37,6 +39,7 @@ cpu: clean cpu-cc $(TARGET)
 .PHONY: gpu-cc
 gpu-cc:
 	$(eval CC = $(NVCC))
+	$(eval LDFLAGS = $(NVCC_LDFLAGS))
 
 .PHONY: gpu
 gpu: clean gpu-cc $(TARGET)
