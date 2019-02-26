@@ -8,6 +8,7 @@
 
 #include "../Settings.h"
 
+#include "../BitHelper.h"
 #include "../LZSSInterface.h"
 #include "../TimerHelper.hpp"
 
@@ -17,14 +18,65 @@
 #define cudaCheckError(op, msg) \
     do { cudaError_t ret = (op); if ((ret) != cudaSuccess) _gerror((ret), (msg)); } while (false)
 
+#define MIN(a, b) \
+    ((a) < (b) ? (a) : (b))
+
 inline void _gerror(cudaError_t cudaError, const char* msg) {
     fprintf(stderr, "%s, cudaError = %d\n", msg, cudaError);
     exit(-1);
 }
 
 __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
-    uint8_t* deviceOutBuf, int* deviceOutSize, CompressFlagBlock* deviceFlagOut, int nFlagBlocks, int* deviceFlagSize) {
-    
+    uint8_t* deviceOutBuf, int* deviceOutSize,
+    CompressFlagBlock* deviceFlagOut, int* deviceFlagSize)
+{
+    __shared__ uint8_t blockBuf[DataBlockSize];
+    __shared__ PairType blockFlags[DataBlockSize];
+
+    auto threadId = threadIdx.x;
+    auto blockId = blockIdx.x;
+
+    auto blockOffset = blockIdx.x * DataBlockSize;
+    auto blockSize = MIN(DataBlockSize, inSize - blockOffset);
+
+    for (int t = threadId; t < blockSize; t += blockDim.x) {
+        blockBuf[t] = inBuf[blockOffset + t];
+    }
+    __syncthreads();
+
+    if (threadId == 0 && blockId == 0) {
+        // debug
+        blockBuf[blockSize - 1] = '\0';
+        printf(blockBuf);
+    }
+
+    for (int t = threadId; t < blockSize; t += blockDim.x) {
+        auto lookbackLength = MIN(WindowSize, t);
+        auto lookaheadLength = MIN(MaxEncodeLength, blockSize - t);
+        int matchOffset, matchLength;
+
+        if (FindMatch(blockBuf + t - lookbackLength, lookbackLength,
+            blockBuf + t, lookaheadLength, matchOffset, matchLength)) {
+
+            // Convert offset to backward representation
+            matchOffset = lookbackLength - matchOffset;
+
+            // Due to the bit limit, minus 1 for exact offset and length
+            blockFlags[t] = ((matchOffset - 1) << PairLengthBits) | (matchLength - 1);
+        } else {
+            blockFlags[t] = 0;
+        }
+    }
+    __syncthreads();
+
+    // Collector
+    if (threadId == 0) {
+        int outSize = 0, flagSize = 0;
+
+        for (int i = 0; i < blockSize; ++i) {
+            
+        }
+    }
 }
 
 std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
@@ -60,7 +112,8 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     printf("Launching kernel...\n");
 
     timer.begin();
-    //CompressKernel<<<,>>>();
+    CompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceInBuf, inSize, 
+        deviceOutBuf, deviceOutSize, deviceFlagOut, deviceFlagSize);
     auto elapsed = timer.end();
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
 
@@ -77,6 +130,12 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
         "Failed to copy deviceFlagOut to host");
     cudaDeviceSynchronize();
     
+    cudaFree(deviceInBuf);
+    cudaFree(deviceOutBuf);
+    cudaFree(deviceOutSize);
+    cudaFree(deviceFlagOut);
+    cudaFree(deviceFlagSize);
+
     return std::make_pair(true, elapsed);
 }
 
