@@ -67,7 +67,7 @@ void blockCompress(int blockId,
 
 void blockDecompress(int blockId,
     CompressFlagBlock* flagIn,
-    const uint8_t* inBuf, int inSize, uint8_t* outBuf,
+    const uint8_t* inBuf, uint8_t* outBuf,
     std::function<void(int)> finishCallback)
 {
     auto inOffset = flagIn[blockId].CompressedOffset;

@@ -9,7 +9,6 @@
 
 #include "../BitHelper.h"
 #include "../LZSSInterface.h"
-#include "../TimerHelper.hpp"
 
 #include "../MatchHelper/MatchHelper.h"
 

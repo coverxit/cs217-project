@@ -6,5 +6,5 @@ void blockCompress(int blockId, const uint8_t* inBuf, int inSize,
     std::function<void(int)> finishCallback = nullptr);
 
 void blockDecompress(int blockId, CompressFlagBlock* flagIn,
-    const uint8_t* inBuf, int inSize, uint8_t* outBuf,
+    const uint8_t* inBuf, uint8_t* outBuf,
     std::function<void(int)> finishCallback = nullptr);
