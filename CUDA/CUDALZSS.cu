@@ -48,10 +48,6 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     for (int t = threadId; t < blockSize; t += blockDim.x) {
         blockBuf[t] = deviceInBuf[blockOffset + t];
     }
-
-    for (int t = threadId; t < DataBlockSize / 8; t += blockDim.x) {
-        compressBlock.Flags[t] = 0;
-    }
     __syncthreads();
 
     for (int t = threadId; t < blockSize; t += blockDim.x) {
@@ -76,7 +72,7 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     // Collector
     if (threadId == 0) {
         CompressFlagBlock compressBlock;
-        memset(compressBlock, 0, sizeof(CompressFlagBlock));
+        memset(&compressBlock, 0, sizeof(CompressFlagBlock));
 
         for (int i = 0; i < blockSize;) {
             if (blockFlags[i] == 0) {
