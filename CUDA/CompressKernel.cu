@@ -18,8 +18,7 @@
 
 __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     uint8_t* deviceOutBuf, int* deviceOutSize,
-    CompressFlagBlock* deviceFlagOut, int nFlagBlocks, int* deviceFlagSize,
-    int* deviceNumBlocksDone)
+    CompressFlagBlock* deviceFlagOut, int nFlagBlocks, int* deviceFlagSize)
 {
     __shared__ uint8_t blockBuf[DataBlockSize];
     __shared__ PairType blockFlags[DataBlockSize];
@@ -85,11 +84,5 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
         atomicAdd(deviceFlagSize, SIZE_OF_FLAGS(compressBlock.NumOfFlags) 
             + sizeof(CompressFlagBlock::NumOfFlags) + sizeof(CompressFlagBlock::CompressedSize));
         atomicAdd(deviceOutSize, compressBlock.CompressedSize);
-
-        // Fetch and add
-        auto numBlocksDone = atomicAdd(deviceNumBlocksDone, 1) + 1;
-        if (numBlocksDone % 100 == 0) {
-            printf("Block %d/%d done.\n", numBlocksDone, nFlagBlocks);
-        }
     }
 }
