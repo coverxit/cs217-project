@@ -77,8 +77,8 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
         deviceOutBuf, deviceOutSize,
         deviceFlagOut, nFlagBlocks, deviceFlagSize,
         deviceNumBlocksDone);
-    auto elapsed = timer.end();
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
+    auto elapsed = timer.end();
 
     // Copy: device to host -----------------------
     printf("Copying data from device to host... ");
