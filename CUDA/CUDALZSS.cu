@@ -37,8 +37,7 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     int* deviceNumBlocksDone)
 {
     __shared__ uint8_t blockBuf[DataBlockSize];
-    __shared__ PairType blockFlags[DataBlockSize * 2];
-    __shared__ CompressFlagBlock compressBlock;
+    __shared__ PairType blockFlags[DataBlockSize];
 
     auto threadId = threadIdx.x;
     auto blockId = blockIdx.x;
@@ -65,34 +64,35 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
 
             // Convert offset to backward representation
             matchOffset = lookbackLength - matchOffset;
-        }
 
-        // matchOffset & matchLength has been preset in FindMatch, if no match found.
-        blockFlags[t * 2] = matchOffset;
-        blockFlags[t * 2 + 1] = matchLength;
+            // Due to the bit limit, minus 1 for exact offset and length
+            blockFlags[t] = ((matchOffset - 1) << PairLengthBits) | (matchLength - 1);
+        } else {
+            blockFlags[t] = 0;
+        }
     }
     __syncthreads();
 
     // Collector
     if (threadId == 0) {
-        compressBlock.CompressedSize = 0;
-        compressBlock.NumOfFlags = 0;
+        CompressFlagBlock compressBlock;
+        memset(compressBlock, 0, sizeof(CompressFlagBlock));
 
         for (int i = 0; i < blockSize;) {
-            if (blockFlags[i * 2 + 1] == 0) {
+            if (blockFlags[i] == 0) {
                 deviceOutBuf[blockOffset + compressBlock.CompressedSize] = blockBuf[i];
                 ++compressBlock.CompressedSize;
 
                 PUT_BIT(compressBlock.Flags, compressBlock.NumOfFlags, 0);
                 i += 1;
             } else {
-                // Due to the bit limit, minus 1 for exact offset and length
-                PairType matchPair = ((blockFlags[i * 2] - 1) << PairLengthBits) | (blockFlags[i * 2 + 1] - 1);
-                memcpy(deviceOutBuf + blockOffset + compressBlock.CompressedSize, &matchPair, sizeof(PairType));
+                memcpy(deviceOutBuf + blockOffset + compressBlock.CompressedSize, &blockFlags[i], sizeof(PairType));
                 compressBlock.CompressedSize += sizeof(PairType);
 
                 PUT_BIT(compressBlock.Flags, compressBlock.NumOfFlags, 1);
-                i += blockFlags[i * 2 + 1];
+
+                auto matchLength = (blockFlags[i] & (MaxEncodeLength - 1)) + 1;
+                i += matchLength;
             }
 
             ++compressBlock.NumOfFlags;
