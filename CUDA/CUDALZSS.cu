@@ -95,7 +95,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaCheckError(cudaMemcpy(flagOut, deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks, cudaMemcpyDeviceToHost),
         "Failed to copy deviceFlagOut to host");
     cudaDeviceSynchronize();
-    printf("%.6fs\n", elapsed);
+    printf("%.6fs\n", timer.end());
     fflush(stdout);
 
     cudaFree(deviceInBuf);
