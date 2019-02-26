@@ -27,9 +27,6 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
             _gerror((ret), (msg)); \
     } while (false)
 
-#define MIN(a, b) \
-    ((a) < (b) ? (a) : (b))
-
 inline void _gerror(cudaError_t cudaError, const char* msg)
 {
     fprintf(stderr, "%s, cudaError = %d\n", msg, cudaError);

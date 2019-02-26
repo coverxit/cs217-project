@@ -6,9 +6,13 @@
 #include "../Settings.h"
 
 #include "../BitHelper.h"
+#include "../LZSSInterface.h"
 #include "../TimerHelper.hpp"
 
 #include "../MatchHelper/MatchHelper.h"
+
+#define MIN(a, b) \
+    ((a) < (b) ? (a) : (b))
 
 __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     uint8_t* deviceOutBuf, int* deviceOutSize,
