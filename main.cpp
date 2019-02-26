@@ -20,7 +20,7 @@
 
 #include "Settings.h"
 
-#include "Helper/Helper.h"
+#include "BitHelper.h"
 #include "LZSSInterface.h"
 
 #include "ConcurrentStream/ConcurrentStream.hpp"

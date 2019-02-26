@@ -7,16 +7,20 @@ NVCC = nvcc
 CFLAGS = -c -O3 -std=c++11 -g
 LDFLAGS = -pthread
 
-SOURCES =							\
+TARGET = $(BINDIR)/$(EXECUTABLE)
+
+CPP_SOURCES =						\
 	main.cpp						\
 	LZSSFactory.cpp					\
-	Helper/Helper.cpp				\
 	CPU/BlockHelper.cpp				\
 	CPU/ST/CPUSingleThreadLZSS.cpp	\
 	CPU/MT/CPUMultiThreadLZSS.cpp
 
-OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
-TARGET = $(BINDIR)/$(EXECUTABLE)
+CU_SOURCES =						\
+	MatchHelper/MatchHelper.cu
+
+CPP_OBJECTS = $(patsubst %.cpp,%.o,$(CPP_SOURCES))
+CU_OBJECTS = $(patsubst %.cu,%.o,$(CU_SOURCES))
 
 .PHONY: all
 all:
@@ -25,27 +29,37 @@ all:
 .PHONY: cpu-cc
 cpu-cc:
 	$(eval CC = $(GCC))
+	$(eval CFLAGS = -x c++ $(CFLAGS))
 
 .PHONY: cpu
-cpu: cpu-cc clean $(TARGET)
+cpu: clean cpu-cc $(TARGET)
 
 .PHONY: gpu-cc
 gpu-cc:
 	$(eval CC = $(NVCC))
 
 .PHONY: gpu
-gpu: gpu-cc clean $(TARGET)
+gpu: clean gpu-cc $(TARGET)
+	
+%.o: %.cpp
+	@echo 'compiling cpp:' $<
+	@$(CC) $(CFLAGS) -o $@ $<
 
-$(OBJECTS): %.o : %.cpp
-	$(CC) $(CFLAGS) -o $@ $<
+%.o: %.cu
+	@echo 'compiling cu:' $<
+	@$(CC) $(CFLAGS) -o $@ $<
 
-$(TARGET): $(OBJECTS) | $(BINDIR)
-	$(CC) $(LDFLAGS) -o $@ $(OBJECTS)
+$(TARGET): $(BINDIR) $(CPP_OBJECTS) $(CU_OBJECTS)
+	@echo 'linking:' $@
+	@$(CC) $(LDFLAGS) -o $@ $(CPP_OBJECTS) $(CU_OBJECTS)
 
 $(BINDIR):
-	mkdir -p $@
+	@echo 'mkdir:' $@
+	@mkdir -p $@
 
 .PHONY: clean
 clean:
-	rm -f $(OBJECTS)
-	rm -rf $(BINDIR)
+	@echo 'cleaning...'
+	@rm -f $(CPP_OBJECTS)
+	@rm -f $(CU_OBJECTS)
+	@rm -rf $(BINDIR)

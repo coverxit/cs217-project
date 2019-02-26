@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include "../Settings.h"
-#include "Helper.h"
+#include "MatchHelper.h"
 
 #ifdef __NVCC__
 __device__

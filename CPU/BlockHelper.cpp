@@ -6,8 +6,9 @@
 
 #include "../Settings.h"
 
-#include "../Helper/Helper.h"
+#include "../BitHelper.h"
 #include "../LZSSInterface.h"
+#include "../MatchHelper/MatchHelper.h"
 
 #include "BlockHelper.h"
 
