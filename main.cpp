@@ -32,7 +32,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     auto flagBlocks = new CompressFlagBlock[nFlagBlocks];
 
     CompressedFileHeader header{ DefaultMagic, inSize };
-    int outSize, flagSize;
+    int outSize = inSize, flagSize;
 
     printf("Compressing...\n");
     auto retVal = lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, nFlagBlocks, flagSize);
