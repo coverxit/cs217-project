@@ -1,6 +1,5 @@
 #include <functional>
 #include <string>
-#include <unordered_map>
 
 #include <memory.h>
 #include <stdint.h>

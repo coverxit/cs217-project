@@ -74,5 +74,5 @@ clean:
 	@echo 'cleaning...'
 	@rm -f $(CPP_OBJECTS)
 	@rm -f $(COMMON_OBJECTS)
-	@rm -f $(CUDA_SOURCES)
+	@rm -f $(CUDA_OBJECTS)
 	@rm -rf $(BINDIR)
