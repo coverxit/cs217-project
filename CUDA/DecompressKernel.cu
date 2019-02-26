@@ -11,22 +11,16 @@
 #include "../LZSSInterface.h"
 
 // Minor difference to the implementation of BlockDecompress.
-__global__ void DecompressKernel(const uint8_t* deviceFlagIn, int nFlagBlocks,
+__global__ void DecompressKernel(CompressFlagBlock* deviceFlagIn, int nFlagBlocks,
     const uint8_t* deviceInBuf, uint8_t* deviceOutBuf)
 {
-    CompressFlagBlock flagBlock;
-
     // This is the data blockId. Each thread is responsible for a 4KB data block.
     auto blockId = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // Manually byte-by-byte copy, otherwise misaligned memory access is triggered.
-    auto copyOffestLocal = (uint8_t*)&flagBlock;
-    auto copyOffsetGlobal = deviceFlagIn + blockId * sizeof(CompressFlagBlock);
-    for (int i = 0; i < sizeof(CompressFlagBlock); ++i) {
-        *(copyOffestLocal++) = *(copyOffsetGlobal++);
-    }
-
     if (blockId < nFlagBlocks) {
+        CompressFlagBlock flagBlock;
+        memcpy(&flagBlock, deviceFlagIn + blockId, sizeof(CompressFlagBlock));
+
         auto inOffset = flagBlock.CompressedOffset;
         auto outOffset = blockId * DataBlockSize;
 
