@@ -28,10 +28,11 @@ inline void _gerror(cudaError_t cudaError, const char* msg) {
 
 __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     uint8_t* deviceOutBuf, int* deviceOutSize,
-    CompressFlagBlock* deviceFlagOut, int* deviceFlagSize)
+    CompressFlagBlock* deviceFlagOut, int nFlagBlocks, int* deviceFlagSize)
 {
     __shared__ uint8_t blockBuf[DataBlockSize];
     __shared__ PairType blockFlags[DataBlockSize];
+    __shared__ CompressFlagBlock compressBlock;
 
     auto threadId = threadIdx.x;
     auto blockId = blockIdx.x;
@@ -40,15 +41,13 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     auto blockSize = MIN(DataBlockSize, inSize - blockOffset);
 
     for (int t = threadId; t < blockSize; t += blockDim.x) {
-        blockBuf[t] = inBuf[blockOffset + t];
+        blockBuf[t] = deviceInBuf[blockOffset + t];
+    }
+
+    for (int t = threadId; t < DataBlockSize / 8; t += blockDim.x) {
+        compressBlock.Flags[t] = 0;
     }
     __syncthreads();
-
-    if (threadId == 0 && blockId == 0) {
-        // debug
-        blockBuf[blockSize - 1] = '\0';
-        printf(blockBuf);
-    }
 
     for (int t = threadId; t < blockSize; t += blockDim.x) {
         auto lookbackLength = MIN(WindowSize, t);
@@ -71,11 +70,38 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
 
     // Collector
     if (threadId == 0) {
-        int outSize = 0, flagSize = 0;
+        compressBlock.CompressedSize = 0;
+        compressBlock.NumOfFlags = 0;
+        
+        for (int i = 0; i < blockSize; ) {
+            if (blockFlags[i] == 0) {
+                deviceOutBuf[blockOffset + written] = blockBuf[i];
+                ++compressBlock.CompressedSize;
 
-        for (int i = 0; i < blockSize; ++i) {
-            
+                PUT_BIT(compressBlock.Flags, compressBlock.NumOfFlags, 0);
+                i += 1;
+            } else {
+                // Plus 1 for the opposite operation in compression
+                auto matchLength = (blockFlags[i] & (MaxEncodeLength - 1)) + 1;
+
+                memcpy(deviceOutBuf + blockOffset + written, &blockFlags[i], sizeof(PairType));
+                compressBlock.CompressedSize += sizeof(PairType);
+
+                PUT_BIT(compressBlock.Flags, compressBlock.NumOfFlags, 1);
+                i += matchLength;
+            }
+
+            ++compressBlock.NumOfFlags;
         }
+
+        memcpy(deviceFlagOut + blockId, &compressBlock, sizeof(CompressFlagBlock));
+
+        // taken by current flag block
+        atomicAdd(deviceFlagSize, SIZE_OF_FLAGS(nFlags) + sizeof(CompressFlagBlock::NumOfFlags)
+            + sizeof(CompressFlagBlock::CompressedSize));
+        atomicAdd(deviceOutSize, compressBlock.CompressedSize);
+
+        printf("Block %d/%d done.\n", blockId, nFlagBlocks);
     }
 }
 
@@ -113,7 +139,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 
     timer.begin();
     CompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceInBuf, inSize, 
-        deviceOutBuf, deviceOutSize, deviceFlagOut, deviceFlagSize);
+        deviceOutBuf, deviceOutSize, deviceFlagOut, nFlagBlocks, deviceFlagSize);
     auto elapsed = timer.end();
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
 
