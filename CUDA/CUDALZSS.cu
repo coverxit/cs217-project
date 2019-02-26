@@ -126,7 +126,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     int *deviceOutSize, *deviceFlagSize, *deviceNumBlocksDone;
 
     // Allocate ----------------------------------
-    printf("Allocating device variables...\n");
+    printf("Allocating device variables...\n"); fflush(stdout);
     cudaCheckError(cudaMalloc((void**)&deviceInBuf, inSize), "Failed to allocate deviceInBuf");
 
     cudaCheckError(cudaMalloc((void**)&deviceOutBuf, outSize), "Failed to allocate deviceOutBuf");
@@ -138,7 +138,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaCheckError(cudaMalloc((void**)&deviceNumBlocksDone, sizeof(int)), "Failed to allocate deviceNumBlocksDone");
 
     // Copy: host to device -----------------------
-    printf("Copying data from host to device...\n");
+    printf("Copying data from host to device...\n"); fflush(stdout);
     cudaCheckError(cudaMemcpy(deviceInBuf, inBuf, inSize, cudaMemcpyHostToDevice),
         "Failed to copy deviceInBuf to device");
     cudaCheckError(cudaMemset(deviceFlagOut, 0, sizeof(CompressFlagBlock) * nFlagBlocks),
@@ -146,7 +146,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaDeviceSynchronize();
 
     // Launch kernel ------------------------------
-    printf("Launching kernel...\n");
+    printf("Launching kernel...\n"); fflush(stdout);
 
     timer.begin();
     CompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceInBuf, inSize,
@@ -157,7 +157,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
 
     // Copy: device to host -----------------------
-    printf("Copying data from device to host...\n");
+    printf("Copying data from device to host...\n"); fflush(stdout);
     cudaCheckError(cudaMemcpy(&outSize, deviceOutSize, sizeof(int), cudaMemcpyDeviceToHost),
         "Failed to copy deviceOutSize to host");
     cudaCheckError(cudaMemcpy(&flagSize, deviceFlagSize, sizeof(int), cudaMemcpyDeviceToHost),
