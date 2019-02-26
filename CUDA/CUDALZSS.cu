@@ -44,7 +44,10 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     int *deviceOutSize, *deviceFlagSize, *deviceNumBlocksDone;
 
     // Allocate ----------------------------------
-    printf("Allocating device variables...\n"); fflush(stdout);
+    printf("Allocating device variables... ");
+    fflush(stdout);
+
+    timer.begin();
     cudaCheckError(cudaMalloc((void**)&deviceInBuf, inSize), "Failed to allocate deviceInBuf");
 
     cudaCheckError(cudaMalloc((void**)&deviceOutBuf, outSize), "Failed to allocate deviceOutBuf");
@@ -54,17 +57,24 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
         "Failed to allocate deviceFlagOut");
     cudaCheckError(cudaMalloc((void**)&deviceFlagSize, sizeof(int)), "Failed to allocate deviceFlagSize");
     cudaCheckError(cudaMalloc((void**)&deviceNumBlocksDone, sizeof(int)), "Failed to allocate deviceNumBlocksDone");
+    cudaDeviceSynchronize();
+    printf("%.6f s\n", timer.end());
 
     // Copy: host to device -----------------------
-    printf("Copying data from host to device...\n"); fflush(stdout);
+    printf("Copying data from host to device... ");
+    fflush(stdout);
+
+    timer.begin();
     cudaCheckError(cudaMemcpy(deviceInBuf, inBuf, inSize, cudaMemcpyHostToDevice),
         "Failed to copy deviceInBuf to device");
     cudaCheckError(cudaMemset(deviceFlagOut, 0, sizeof(CompressFlagBlock) * nFlagBlocks),
         "Failed to set deviceFlagOut to 0");
     cudaDeviceSynchronize();
+    printf("%.6f s\n", timer.end());
 
     // Launch kernel ------------------------------
-    printf("Launching kernel...\n"); fflush(stdout);
+    printf("Launching kernel... ");
+    fflush(stdout);
 
     timer.begin();
     CompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceInBuf, inSize,
@@ -73,9 +83,13 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
         deviceNumBlocksDone);
     auto elapsed = timer.end();
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
+    printf("%.6f s\n", elapsed);
 
     // Copy: device to host -----------------------
-    printf("Copying data from device to host...\n"); fflush(stdout);
+    printf("Copying data from device to host... ");
+    fflush(stdout);
+
+    timer.begin();
     cudaCheckError(cudaMemcpy(&outSize, deviceOutSize, sizeof(int), cudaMemcpyDeviceToHost),
         "Failed to copy deviceOutSize to host");
     cudaCheckError(cudaMemcpy(&flagSize, deviceFlagSize, sizeof(int), cudaMemcpyDeviceToHost),
@@ -86,6 +100,8 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaCheckError(cudaMemcpy(flagOut, deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks, cudaMemcpyDeviceToHost),
         "Failed to copy deviceFlagOut to host");
     cudaDeviceSynchronize();
+    printf("%.6f s\n", elapsed);
+    fflush(stdout);
 
     cudaFree(deviceInBuf);
     cudaFree(deviceOutBuf);
