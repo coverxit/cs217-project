@@ -162,9 +162,5 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFla
     cudaFree(deviceOutBuf);
     cudaFree(deviceFlagIn);
 
-    timer.begin();
-    //DecompressKernel<<<,>>>();
-    auto elapsed = timer.end();
-
     return std::make_pair(true, elapsed);
 }
