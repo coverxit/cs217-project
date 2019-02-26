@@ -20,23 +20,22 @@
 
 std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int inSize,
     uint8_t* outBuf, int& outSize,
-    CompressFlagBlock* flagOut, int& flagSize)
+    CompressFlagBlock* flagOut, int nFlagBlocks, int& flagSize)
 {
     Timer timer;
     
-    auto nBlocks = (inSize - 1) / DataBlockSize + 1;
     std::atomic_int atomicOutSize(0), atomicFlagSize(0), atomicBlocksDone(0);
     std::mutex outputMutex;
 
     auto nThreads = std::thread::hardware_concurrency();
 
     // Too many threads?
-    if (nThreads > nBlocks) {
-        nThreads = nBlocks;
+    if (nThreads > nFlagBlocks) {
+        nThreads = nFlagBlocks;
     }
 
     // Left over?
-    if (nBlocks % nThreads) {
+    if (nFlagBlocks % nThreads) {
         ++nThreads;
     }
 
@@ -45,21 +44,21 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int i
 
     // Process block in parallel
     for (int i = 0; i < nThreads; ++i) {
-        auto chunk = (nBlocks - 1) / nThreads + 1;
+        auto chunk = (nFlagBlocks - 1) / nThreads + 1;
         auto offset = chunk * i;
-        auto length = std::min(chunk, nBlocks - offset);
+        auto length = std::min(chunk, nFlagBlocks - offset);
 
         threads.emplace_back([&, offset, length]() {
             int tempOutSize = 0, tempFlagSize = 0;
 
             for (int j = offset; j < offset + length; ++j) {
                 blockCompress(j, inBuf, inSize, outBuf, tempOutSize, flagOut, tempFlagSize,
-                    [nBlocks, &outputMutex, &atomicBlocksDone](int blockId) {
+                    [nFlagBlocks, &outputMutex, &atomicBlocksDone](int blockId) {
                         ++atomicBlocksDone;
 
                         if (atomicBlocksDone % 100 == 0) {
                             outputMutex.lock();
-                            printf("Block %d/%d done.\n", atomicBlocksDone.load(), nBlocks);
+                            printf("Block %d/%d done.\n", atomicBlocksDone.load(), nFlagBlocks);
                             outputMutex.unlock();
                         }
                     });

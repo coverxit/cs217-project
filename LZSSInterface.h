@@ -24,7 +24,7 @@ public:
 
     virtual std::pair<bool, double> compress(const uint8_t* inBuf, int inSize,
         uint8_t* outBuf, int& outSize,
-        CompressFlagBlock* flagOut, int& flagSize)
+        CompressFlagBlock* flagOut, int nFlagBlocks, int& flagSize)
         = 0;
 
     virtual std::pair<bool, double> decompress(CompressFlagBlock* flagIn, int nFlagBlocks,

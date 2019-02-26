@@ -17,18 +17,16 @@
 
 std::pair<bool, double> CPUSingleThreadLZSS::compress(const uint8_t* inBuf, int inSize,
     uint8_t* outBuf, int& outSize,
-    CompressFlagBlock* flagOut, int& flagSize)
+    CompressFlagBlock* flagOut, int nFlagBlocks, int& flagSize)
 {
     Timer timer;
 
-    auto nBlocks = (inSize - 1) / DataBlockSize + 1;
     outSize = flagSize = 0;
-
-    for (int i = 0; i < nBlocks; ++i) {
+    for (int i = 0; i < nFlagBlocks; ++i) {
         blockCompress(i, inBuf, inSize, outBuf, outSize, flagOut, flagSize,
-            [nBlocks](int blockId) {
+            [nFlagBlocks](int blockId) {
                 if ((blockId + 1) % 100 == 0) {
-                    printf("Block %d/%d done.\n", blockId + 1, nBlocks);
+                    printf("Block %d/%d done.\n", blockId + 1, nFlagBlocks);
                 }
             });
     }

@@ -37,7 +37,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     CompressedFileHeader header{ DefaultMagic, inSize };
     int outSize, flagSize;
 
-    auto retVal = lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, flagSize);
+    auto retVal = lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, nFlagBlocks, flagSize);
     if (retVal.first) {
         std::vector<std::pair<int, int>> offsets;
         std::vector<int> sizes;
