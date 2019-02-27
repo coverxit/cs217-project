@@ -143,7 +143,8 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFla
     fflush(stdout);
 
     timer.begin();
-    DecompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceFlagIn, deviceInBuf, deviceOutBuf);
+    auto dimGrid = (nFlagBlocks - 1) / GPUBlockSize + 1;
+    DecompressKernel<<<dimGrid, GPUBlockSize>>>(deviceFlagIn, nFlagBlocks, deviceInBuf, deviceOutBuf);
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
     auto elapsed = timer.end();
     printf("%.6fs\n", elapsed);
