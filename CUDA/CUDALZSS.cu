@@ -74,7 +74,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     timer.begin();
     CompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceInBuf, inSize,
         deviceOutBuf, deviceOutSize,
-        deviceFlagOut, nFlagBlocks, deviceFlagSize);
+        deviceFlagOut, deviceFlagSize);
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
     auto elapsed = timer.end();
 

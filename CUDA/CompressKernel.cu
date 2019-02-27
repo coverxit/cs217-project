@@ -17,7 +17,7 @@
 
 __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     uint8_t* deviceOutBuf, int* deviceOutSize,
-    CompressFlagBlock* deviceFlagOut, int nFlagBlocks, int* deviceFlagSize)
+    CompressFlagBlock* deviceFlagOut, int* deviceFlagSize)
 {
     __shared__ uint8_t blockBuf[DataBlockSize];
     __shared__ PairType blockFlags[DataBlockSize];
