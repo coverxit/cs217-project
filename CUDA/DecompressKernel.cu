@@ -96,6 +96,7 @@ __global__ void DecompressKernel(CompressFlagBlock* deviceFlagIn,
         // 0 means not resolved
         // But since we have cleaned before, we don't have to write it again
     }
+    __syncthreads();
 
     // Multi-Round Resolution protocol
     
