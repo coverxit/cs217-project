@@ -68,7 +68,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     printf("%.6fs\n", timer.end());
 
     // Launch kernel ------------------------------
-    printf("Launching kernel...\n");
+    printf("Launching kernel... ");
     fflush(stdout);
 
     timer.begin();
@@ -77,6 +77,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
         deviceFlagOut, deviceFlagSize);
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
     auto elapsed = timer.end();
+    printf("%.6fs\n", elapsed);
 
     // Copy: device to host -----------------------
     printf("Copying data from device to host... ");
@@ -138,14 +139,14 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFla
     printf("%.6fs\n", timer.end());
 
     // Launch kernel ------------------------------
-    printf("Launching kernel...\n");
+    printf("Launching kernel... ");
     fflush(stdout);
 
     timer.begin();
-    auto dimGrid = (nFlagBlocks - 1) / GPUBlockSize + 1;
-    DecompressKernel<<<dimGrid, GPUBlockSize>>>(deviceFlagIn, nFlagBlocks, deviceInBuf, deviceOutBuf);
+    DecompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceFlagIn, deviceInBuf, deviceOutBuf);
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
     auto elapsed = timer.end();
+    printf("%.6fs\n", elapsed);
 
     // Copy: device to host -----------------------
     printf("Copying data from device to host... ");
