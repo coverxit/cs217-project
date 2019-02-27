@@ -42,7 +42,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     int *hostOutSize, *hostFlagSize;
     cudaStream_t *cudaStreams;
 
-    auto numOfStreams = std::min(nFlagBlocks, MaxNumOfCUDAStream);
+    auto numOfStreams = std::min(nFlagBlocks, NumOfCUDAStream);
     auto blocksPerStream = (nFlagBlocks - 1) / numOfStreams + 1;
     auto alignedStreamSize = blocksPerStream * DataBlockSize;
 
