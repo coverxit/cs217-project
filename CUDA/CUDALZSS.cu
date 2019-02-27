@@ -147,7 +147,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 
     // Cleanup -----------------------------------
     for (int i = 0; i < numOfStreams; ++i) {
-        cudaCheckError(cudaStreamDestory(cudaStreams[i]), "Failed to destory CUDA streams");
+        cudaCheckError(cudaStreamDestroy(cudaStreams[i]), "Failed to destroy CUDA streams");
     }
 
     delete[] cudaStreams;
