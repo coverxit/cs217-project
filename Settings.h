@@ -12,6 +12,6 @@ constexpr int MaxEncodeLength = 1 << PairLengthBits;
 
 constexpr int DataBlockSize = 4096;      // Divide data into 4096-byte blocks for parallel processing
 constexpr int GPUBlockSize = 256;        // 256 threads per block
-constexpr int NumOfCUDAStream = 4;       // Numeber of CUDA streams
+constexpr int NumOfCUDAStream = 4;       // Number of CUDA streams
 
 constexpr int ReplaceThreshold = 3;      // At least 3 bytes match before we perform replacement
