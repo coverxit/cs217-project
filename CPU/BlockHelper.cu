@@ -43,10 +43,10 @@ void BlockCompress(int blockId,
             j += matchLength;
         } else {
             outBuf[blockOffset + written] = blockBuf[j];
-            written += 1;
+            ++written;
 
             PUT_BIT(flagOut[blockId].Flags, nFlags, 0);
-            j += 1;
+            ++j;
         }
 
         ++nFlags;

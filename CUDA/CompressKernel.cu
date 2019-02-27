@@ -63,7 +63,7 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
                 ++compressBlock.CompressedSize;
 
                 PUT_BIT(compressBlock.Flags, compressBlock.NumOfFlags, 0);
-                i += 1;
+                ++i;
             } else {
                 memcpy(deviceOutBuf + blockOffset + compressBlock.CompressedSize, &blockFlags[i], sizeof(PairType));
                 compressBlock.CompressedSize += sizeof(PairType);
