@@ -46,7 +46,7 @@ gcc: clean gcc-setup $(GCC_TARGET)
 .PHONY: nvcc-setup
 nvcc-setup:
 	$(eval CC = $(NVCC))
-	$(eval CFLAGS = -dc $(CFLAGS))
+	$(eval CFLAGS = -dc -G $(CFLAGS))
 	$(eval LDFLAGS = $(NVCC_LDFLAGS))
 
 .PHONY: nvcc
