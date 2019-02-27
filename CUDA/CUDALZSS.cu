@@ -84,7 +84,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
             cudaMemcpyHostToDevice, cudaStreams[i]), 
             "Failed to copy inBuf to device");
 
-        cudaCheckError(cudaMemsetAsync(deviceFlagOut + i * sizeof(CompressFlagBlock), 0, 
+        cudaCheckError(cudaMemsetAsync(deviceFlagOut + i * blocksPerStream, 0, 
             sizeof(CompressFlagBlock) * numOfBlock, cudaStreams[i]),
             "Failed to set deviceFlagOut to 0");
     }
@@ -105,7 +105,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
         CompressKernel<<<numOfBlock, GPUBlockSize, 0, cudaStreams[i]>>>(
             deviceInBuf + i * alignedStreamSize, streamSize,
             deviceOutBuf + i * alignedStreamSize, &deviceOutSize[i],
-            deviceFlagOut + i * alignedStreamSize, &deviceFlagSize[i]);
+            deviceFlagOut + i * blocksPerStream, &deviceFlagSize[i]);
     }
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
     auto elapsed = timer.end();
@@ -125,8 +125,8 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
             cudaMemcpyDeviceToHost, cudaStreams[i]), 
             "Failed to copy deviceOutBuf to host");
 
-        cudaCheckError(cudaMemcpyAsync(flagOut + i * sizeof(CompressFlagBlock),
-            deviceFlagOut + i * sizeof(CompressFlagBlock), numOfBlock * sizeof(CompressFlagBlock),
+        cudaCheckError(cudaMemcpyAsync(flagOut + i * blocksPerStream,
+            deviceFlagOut + i * blocksPerStream, numOfBlock * sizeof(CompressFlagBlock),
             cudaMemcpyDeviceToHost, cudaStreams[i]),
             "Failed to copy deviceFlagOut to host");
     }    
