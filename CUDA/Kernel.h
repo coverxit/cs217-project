@@ -5,4 +5,4 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     CompressFlagBlock* deviceFlagOut, int* deviceFlagSize);
 
 __global__ void DecompressKernel(CompressFlagBlock* deviceFlagIn,
-    const uint8_t* deviceInBuf, uint8_t* deviceOutBuf);
+    const uint8_t* deviceInBuf, int nFlagBlocks, uint8_t* deviceOutBuf);
