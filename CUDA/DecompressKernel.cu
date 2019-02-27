@@ -23,7 +23,7 @@ __global__ void DecompressKernel(CompressFlagBlock* deviceFlagIn, int nFlagBlock
         CompressFlagBlock* flagBlock = &deviceFlagIn[blockId];
 
         auto inOffset = flagBlock->CompressedOffset;
-        auto outOffset = blockId * DataBlockSize;
+        auto outOffset = 0;
 
         for (int j = 0; j < flagBlock->NumOfFlags; ++j) {
             if (GET_BIT(flagBlock->Flags, j) == 0) {
