@@ -94,7 +94,7 @@ void BlockDecompress(int blockId,
                 ++outOffset;
             }
 
-            inOffset += 2;
+            inOffset += sizeof(PairType);
         }
     }
 
