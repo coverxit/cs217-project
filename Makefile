@@ -4,7 +4,7 @@ EXECUTABLE = lzss
 GCC = g++
 NVCC = nvcc
 
-CFLAGS = -c -O3 -std=c++11 -g
+CFLAGS = -c -O3 -std=c++11
 GCC_LDFLAGS = -pthread
 NVCC_LDFLAGS = -Xcompiler="-pthread"
 
@@ -46,7 +46,7 @@ gcc: clean gcc-setup $(GCC_TARGET)
 .PHONY: nvcc-setup
 nvcc-setup:
 	$(eval CC = $(NVCC))
-	$(eval CFLAGS = -dc -G $(CFLAGS))
+	$(eval CFLAGS = -dc $(CFLAGS))
 	$(eval LDFLAGS = $(NVCC_LDFLAGS))
 
 .PHONY: nvcc
