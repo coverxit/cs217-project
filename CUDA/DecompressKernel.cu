@@ -28,7 +28,7 @@ __global__ void DecompressKernel(CompressFlagBlock* deviceFlagIn, int nFlagBlock
         for (int j = 0; j < flagBlock->NumOfFlags; ++j) {
             if (GET_BIT(flagBlock->Flags, j) == 0) {
                 // Single character
-                deviceOutBuf[outOffset] = deviceInBuf[inOffset];
+                outBuf[outOffset] = deviceInBuf[inOffset];
                 ++inOffset;
                 ++outOffset;
             } else {
