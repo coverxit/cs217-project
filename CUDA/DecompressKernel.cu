@@ -14,22 +14,21 @@
 __global__ void DecompressKernel(CompressFlagBlock* deviceFlagIn, int nFlagBlocks,
     const uint8_t* deviceInBuf, uint8_t* deviceOutBuf)
 {
-    CompressFlagBlock flagBlock;
     uint8_t outBuf[DataBlockSize];
 
     // This is the data blockId. Each thread is responsible for a 4KB data block.
     auto blockId = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (blockId < nFlagBlocks) {
-        memcpy(&flagBlock, deviceFlagIn + blockId, sizeof(CompressFlagBlock));
+        CompressFlagBlock* flagBlock = deviceFlagIn[blockId];
 
-        auto inOffset = 0;
-        auto outOffset = 0;
+        auto inOffset = flagBlock->CompressedOffset;
+        auto outOffset = blockId * DataBlockSize;
 
-        for (int j = 0; j < flagBlock.NumOfFlags; ++j) {
-            if (GET_BIT(flagBlock.Flags, j) == 0) {
+        for (int j = 0; j < flagBlock->NumOfFlags; ++j) {
+            if (GET_BIT(flagBlock->Flags, j) == 0) {
                 // Single character
-                outBuf[outOffset] = deviceInBuf[inOffset];
+                deviceOutBuf[outOffset] = deviceInBuf[inOffset];
                 ++inOffset;
                 ++outOffset;
             } else {
