@@ -149,7 +149,7 @@ protected:
                 }
 
                 printf(" 100%%\n");
-            })
+            });
         }
 
         for (auto& t : threads) {
