@@ -128,7 +128,7 @@ protected:
                     memcpy(dst + offsets[j].first, src + offsets[j].second, sizes[j]);
                     size += sizes[j];
                     
-                    auto fetch = blocks.fetch_add(1);
+                    auto fetch = blocks.fetch_add(1) + 1;
                     if (fetch % 100 == 0) {
                         printf("Block %d/%d done.\n", fetch, offsets.size());
                     }
