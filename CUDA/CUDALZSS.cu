@@ -108,7 +108,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
     const uint8_t* inBuf, int inSize, uint8_t* outBuf, int outSize)
 {
-    Timer timer(false);
+    Timer timer(false), timerKernel;
 
     uint8_t *deviceInBuf, *deviceOutBuf;
     CompressFlagBlock* deviceFlagIn;
@@ -145,8 +145,7 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFla
     auto dimGrid = (nFlagBlocks - 1) / GPUBlockSize + 1;
     DecompressKernel<<<dimGrid, GPUBlockSize>>>(deviceFlagIn, nFlagBlocks, deviceInBuf, deviceOutBuf);
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
-    auto elapsed = timer.end();
-    printf("%.6fs\n", elapsed);
+    printf("%.6fs\n", timer.end());
 
     // Copy: device to host -----------------------
     printf("Copying data from device to host... ");
@@ -163,5 +162,5 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFla
     cudaFree(deviceOutBuf);
     cudaFree(deviceFlagIn);
 
-    return std::make_pair(true, elapsed);
+    return std::make_pair(true, timerKernel.end());
 }
