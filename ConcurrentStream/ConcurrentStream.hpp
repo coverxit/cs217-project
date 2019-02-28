@@ -93,7 +93,7 @@ protected:
         std::vector<std::pair<int, int>>& offsets, std::vector<int>& sizes,
         int nThreads)
     {
-        std::atomic_int size(0), blocks(0);
+        std::atomic_int size(0);
 
         if (m_fd < 0) {
             fprintf(stderr, "[%s] File not opened.\n", m_name);
@@ -123,15 +123,10 @@ protected:
             auto offset = chunk * i;
             auto length = std::min(chunk, offsets.size() - offset);
 
-            threads.emplace_back([&offsets, &sizes, &blocks, dst, src, offset, length, &size] {
+            threads.emplace_back([&offsets, &sizes, dst, src, offset, length, &size] {
                 for (int j = offset; j < offset + length; ++j) {
                     memcpy(dst + offsets[j].first, src + offsets[j].second, sizes[j]);
                     size += sizes[j];
-                    
-                    auto fetch = blocks.fetch_add(1) + 1;
-                    if (fetch % 100 == 0) {
-                        printf("Block %d/%d done.\n", fetch, offsets.size());
-                    }
                 }
             });
         }
