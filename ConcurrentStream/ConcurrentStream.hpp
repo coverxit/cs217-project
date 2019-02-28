@@ -138,16 +138,15 @@ protected:
 
             threads.emplace_back([&offsets, &blocks]() {
                 auto previous = 0;
-                auto current = (float) blocks.load() / offsets.size();
+                auto current = 100.0f * blocks.load() / offsets.size();
                 
                 while (current < 1.0f) {
                     if (current > 0 && current >= previous) {
-                        auto percent = (int) ceil(current * 100);
-                        printf(" %d%%", percent);
+                        printf(" %d%%", ceil(current));
                         previous += 10;
                     }
 
-                    current = (float) blocks.load() / offsets.size();
+                    current = 100.0f * blocks.load() / offsets.size();
                 }
 
                 printf(" 100%%\n");
