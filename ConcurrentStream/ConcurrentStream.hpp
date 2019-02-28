@@ -77,7 +77,7 @@ protected:
             auto offset = chunk * i;
             auto length = std::min(chunk, size - offset);
 
-            threads.emplace_back([=] {
+            threads.emplace_back([=]() {
                 memcpy(dst + offset, src + offset, length);
             });
         }
@@ -123,17 +123,33 @@ protected:
             auto offset = chunk * i;
             auto length = std::min(chunk, offsets.size() - offset);
 
-            threads.emplace_back([&offsets, &sizes, &blocks, dst, src, offset, length, &size] {
+            threads.emplace_back([&offsets, &sizes, dst, src, offset, length, &size, &blocks]() {
                 for (int j = offset; j < offset + length; ++j) {
                     memcpy(dst + offsets[j].first, src + offsets[j].second, sizes[j]);
                     size += sizes[j];
-                    
-                    auto fetch = blocks.fetch_add(1) + 1;
-                    if (fetch % 100 == 0) {
-                        printf("Block %d/%d done.\n", fetch, offsets.size());
-                    }
+                    ++blocks;
                 }
             });
+        }
+
+        // One more thread for progress reporting
+        if (nThreads >= 1) {
+            printf("Concurrent writing %d blocks:", offsets.size());
+
+            threads.emplace_back([&offsets, &blocks]() {
+                auto previous = 0;
+                auto current = (float) blocks.load() / offsets.size();
+                
+                while (current < 1.0f) {
+                    if (current > 0 && current >= previous) {
+                        auto percent = (int) ceil(current * 100);
+                        printf(" %d%%", percent);
+                        previous += 10;
+                    }
+                }
+
+                printf(" 100%%\n");
+            })
         }
 
         for (auto& t : threads) {
