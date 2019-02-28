@@ -74,10 +74,8 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     // Streaming ----------------------------------
     printf("Launching CUDA streams...\n  => Streams:");
     timer.begin();
+    
     for (int i = 0; i < numOfStreams; ++i) {
-        printf(" [%d]", i);
-        fflush(stdout);
-
         auto streamSize = std::min(alignedStreamSize, inSize - i * alignedStreamSize);
         auto numOfBlock = std::min(blocksPerStream, nFlagBlocks - i * blocksPerStream);
 
@@ -95,12 +93,25 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
             "Failed to set deviceOutSize to 0");
         cudaCheckError(cudaMemsetAsync(deviceFlagSize + i, 0, sizeof(int), cudaStreams[i]), 
             "Failed to set deviceFlagSize to 0");
+    }
+
+    for (int i = 0; i < numOfStreams; ++i) {
+        printf(" [%d]", i);
+        fflush(stdout);
+
+        auto streamSize = std::min(alignedStreamSize, inSize - i * alignedStreamSize);
+        auto numOfBlock = std::min(blocksPerStream, nFlagBlocks - i * blocksPerStream);
 
         // Launch kernel ------------------------------
         CompressKernel<<<numOfBlock, GPUBlockSize, 0, cudaStreams[i]>>>(
             deviceInBuf + i * alignedStreamSize, streamSize,
             deviceOutBuf + i * alignedStreamSize, &deviceOutSize[i],
             deviceFlagOut + i * blocksPerStream, &deviceFlagSize[i]);
+    }
+
+    for (int i = 0; i < numOfStreams; ++i) {
+        auto streamSize = std::min(alignedStreamSize, inSize - i * alignedStreamSize);
+        auto numOfBlock = std::min(blocksPerStream, nFlagBlocks - i * blocksPerStream);
 
         // Copy: device to host -----------------------
         cudaCheckError(cudaMemcpyAsync(outBuf + i * alignedStreamSize,
@@ -120,6 +131,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
             sizeof(int), cudaMemcpyDeviceToHost, cudaStreams[i]),
             "Failed to copy deviceFlagSize to host");
     }
+
     printf("\nWaiting for kernel exeuction complete... ");
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch streaming kernel");
     printf("%.6fs\n", timer.end());
