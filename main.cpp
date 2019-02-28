@@ -144,7 +144,7 @@ int main(int argc, char const* argv[])
     printf("Build on " __DATE__ " " __TIME__ ".\n\n");
 
     printf("System information:\n");
-    printf("- # CPU cores in this system: %u\n", std::thread::hardware_concurrency());
+    printf("- # CPU cores in this system: %u\n\n", std::thread::hardware_concurrency());
 
     if (argc != 4) {
         printf("Usage: %s <options> <input file> <output file>\n", argv[0]);
