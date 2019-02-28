@@ -146,6 +146,8 @@ protected:
                         printf(" %d%%", percent);
                         previous += 10;
                     }
+
+                    current = (float) blocks.load() / offsets.size();
                 }
 
                 printf(" 100%%\n");
