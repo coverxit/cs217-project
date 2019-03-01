@@ -58,7 +58,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     hostFlagSize = new int[numOfKernels];
 
     for (int i = 0; i < numOfKernels; ++i) {
-        cudaSetDevice(i);
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
         auto kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
         auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
@@ -81,7 +81,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     timer.begin();
     
     for (int i = 0; i < numOfKernels; ++i) {
-        cudaSetDevice(i);
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
         auto kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
         auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
@@ -129,7 +129,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 
     printf("\nWaiting for kernel exeuction complete... ");
     for (int i = 0; i < numOfKernels; ++i) {
-        cudaSetDevice(i);
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
         cudaCheckError(cudaDeviceSynchronize(), "Failed to launch multi-GPU kernel");
     }
     printf("%.6fs\n", timer.end());
@@ -145,8 +145,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     }
 
     for (int i = 0; i < numOfKernels; ++i) {
-        cudaSetDevice(i);
-
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
         cudaFree(deviceInBuf[i]);
         cudaFree(deviceOutBuf[i]);
         cudaFree(deviceOutSize[i]);
