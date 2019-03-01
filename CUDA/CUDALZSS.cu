@@ -52,8 +52,12 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     printf("Allocating device variables... ");
     timer.begin();
 
+    deviceInBuf = new uint8_t*[numOfKernels];
+    deviceOutBuf = new uint8_t*[numOfKernels];
+    deviceFlagOut = new CompressFlagBlock*[numOfKernels];
     deviceOutSize = new int*[numOfKernels];
     deviceFlagSize = new int*[numOfKernels];
+
     hostOutSize = new int[numOfKernels];
     hostFlagSize = new int[numOfKernels];
 
@@ -153,8 +157,12 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
         cudaFree(deviceFlagSize[i]);
     }
 
+    delete[] deviceInBuf;
+    delete[] deviceOutBuf;
+    delete[] deviceFlagOut;
     delete[] deviceOutSize;
     delete[] deviceFlagSize;
+    
     delete[] hostOutSize;
     delete[] hostFlagSize;
 
