@@ -44,11 +44,6 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     int numOfGPUs = 0;
     cudaGetDeviceCount(&numOfGPUs);
 
-    deviceOutSize = new int*[numOfKernels];
-    deviceFlagSize = new int*[numOfKernels];
-    hostOutSize = new int[numOfKernels];
-    hostFlagSize = new int[numOfKernels];
-
     auto numOfKernels = std::min(nFlagBlocks / numOfGPUs, numOfGPUs);
     auto blocksPerKernel = (nFlagBlocks - 1) / numOfKernels + 1;
     auto alignedKernelSize = blocksPerKernel * DataBlockSize;
@@ -56,6 +51,11 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     // Allocate ----------------------------------
     printf("Allocating device variables... ");
     timer.begin();
+
+    deviceOutSize = new int*[numOfKernels];
+    deviceFlagSize = new int*[numOfKernels];
+    hostOutSize = new int[numOfKernels];
+    hostFlagSize = new int[numOfKernels];
 
     for (int i = 0; i < numOfKernels; ++i) {
         cudaSetDevice(i);
