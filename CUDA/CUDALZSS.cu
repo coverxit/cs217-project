@@ -101,6 +101,13 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 
         cudaCheckError(cudaMemsetAsync(deviceOutSize[i], 0, sizeof(int)),  "Failed to set deviceOutSize to 0");
         cudaCheckError(cudaMemsetAsync(deviceFlagSize[i], 0, sizeof(int)),  "Failed to set deviceFlagSize to 0");
+    }
+
+    for (int i = 0; i < numOfKernels; ++i) {
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
+
+        auto kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
+        auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
 
         printf(" [%d]", i);
         fflush(stdout);
@@ -110,7 +117,14 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
             deviceInBuf[i], kernelSize,
             deviceOutBuf[i], deviceOutSize[i],
             deviceFlagOut[i], deviceFlagSize[i]);
+    }
 
+    for (int i = 0; i < numOfKernels; ++i) {
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
+    
+        auto kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
+        auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
+            
         // Copy: device to host -----------------------
         cudaCheckError(cudaMemcpyAsync(outBuf + i * alignedKernelSize, 
             deviceOutBuf[i], kernelSize, 
