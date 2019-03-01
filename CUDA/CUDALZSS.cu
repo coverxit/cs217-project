@@ -66,7 +66,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 
         auto kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
         auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
-        
+
         cudaCheckError(cudaMalloc((void**)&deviceInBuf[i], kernelSize), "Failed to allocate deviceInBuf");
 
         cudaCheckError(cudaMalloc((void**)&deviceOutBuf[i], kernelSize), "Failed to allocate deviceOutBuf");
@@ -83,7 +83,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     // Multi-GPU ----------------------------------
     printf("Launching kernels on multiple GPUs...\n  => GPU:");
     timer.begin();
-    
+
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
@@ -91,16 +91,16 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
         auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
 
         // Copy: host to device -------------------
-        cudaCheckError(cudaMemcpyAsync(deviceInBuf[i], 
-            inBuf + i * alignedKernelSize, kernelSize, 
-            cudaMemcpyHostToDevice),
+        cudaCheckError(cudaMemcpyAsync(deviceInBuf[i],
+                           inBuf + i * alignedKernelSize, kernelSize,
+                           cudaMemcpyHostToDevice),
             "Failed to copy inBuf to device");
 
         cudaCheckError(cudaMemsetAsync(deviceFlagOut[i], 0, sizeof(CompressFlagBlock) * numOfBlock),
             "Failed to set deviceFlagOut to 0");
 
-        cudaCheckError(cudaMemsetAsync(deviceOutSize[i], 0, sizeof(int)),  "Failed to set deviceOutSize to 0");
-        cudaCheckError(cudaMemsetAsync(deviceFlagSize[i], 0, sizeof(int)),  "Failed to set deviceFlagSize to 0");
+        cudaCheckError(cudaMemsetAsync(deviceOutSize[i], 0, sizeof(int)), "Failed to set deviceOutSize to 0");
+        cudaCheckError(cudaMemsetAsync(deviceFlagSize[i], 0, sizeof(int)), "Failed to set deviceFlagSize to 0");
     }
 
     for (int i = 0; i < numOfKernels; ++i) {
@@ -121,28 +121,27 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
-    
+
         auto kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
         auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
-            
+
         // Copy: device to host -----------------------
-        cudaCheckError(cudaMemcpyAsync(outBuf + i * alignedKernelSize, 
-            deviceOutBuf[i], kernelSize, 
-            cudaMemcpyDeviceToHost),
+        cudaCheckError(cudaMemcpyAsync(outBuf + i * alignedKernelSize,
+                           deviceOutBuf[i], kernelSize,
+                           cudaMemcpyDeviceToHost),
             "Failed to copy deviceOutBuf to host");
 
         cudaCheckError(cudaMemcpyAsync(flagOut + i * blocksPerKernel,
-            deviceFlagOut[i], numOfBlock * sizeof(CompressFlagBlock),
-            cudaMemcpyDeviceToHost),
+                           deviceFlagOut[i], numOfBlock * sizeof(CompressFlagBlock),
+                           cudaMemcpyDeviceToHost),
             "Failed to copy deviceFlagOut to host");
-        
-        cudaCheckError(cudaMemcpyAsync(hostOutSize + i, deviceOutSize[i], 
-            sizeof(int), cudaMemcpyDeviceToHost),
-            "Failed to copy deviceOutSize to host");
-        cudaCheckError(cudaMemcpyAsync(hostFlagSize + i, deviceFlagSize[i], 
-            sizeof(int), cudaMemcpyDeviceToHost),
-            "Failed to copy deviceFlagSize to host");
 
+        cudaCheckError(cudaMemcpyAsync(hostOutSize + i, deviceOutSize[i],
+                           sizeof(int), cudaMemcpyDeviceToHost),
+            "Failed to copy deviceOutSize to host");
+        cudaCheckError(cudaMemcpyAsync(hostFlagSize + i, deviceFlagSize[i],
+                           sizeof(int), cudaMemcpyDeviceToHost),
+            "Failed to copy deviceFlagSize to host");
     }
 
     printf("\nWaiting for kernel exeuction complete... ");
@@ -176,7 +175,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     delete[] deviceFlagOut;
     delete[] deviceOutSize;
     delete[] deviceFlagSize;
-    
+
     delete[] hostOutSize;
     delete[] hostFlagSize;
 
