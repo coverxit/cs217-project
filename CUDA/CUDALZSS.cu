@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <utility>
 
 #include <memory.h>
@@ -38,27 +39,40 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     uint8_t *deviceInBuf, *deviceOutBuf;
     CompressFlagBlock* deviceFlagOut;
     int *deviceOutSize, *deviceFlagSize;
+    int *hostOutSize, *hostFlagSize;
+    cudaStream_t* cudaStreams;
+
+    auto numOfStreams = std::min(nFlagBlocks, 16);
+    auto blocksPerStream = (nFlagBlocks - 1) / numOfStreams + 1;
+    auto alignedStreamSize = blocksPerStream * DataBlockSize;
+
+    // Create stream -----------------------------
+    printf("Creating CUDA streams... ");
+    timer.begin();
+    cudaStreams = new cudaStream_t[numOfStreams];
+    for (int i = 0; i < numOfStreams; ++i) {
+        cudaCheckError(cudaStreamCreate(&cudaStreams[i]), "Failed to create CUDA streams");
+    }
+    printf("%.6fs\n", timer.end());
 
     // Allocate ----------------------------------
     printf("Allocating device variables... ");
-    fflush(stdout);
-
     timer.begin();
     cudaCheckError(cudaMalloc((void**)&deviceInBuf, inSize), "Failed to allocate deviceInBuf");
 
+    hostOutSize = new int[numOfStreams];
+    hostFlagSize = new int[numOfStreams];
     cudaCheckError(cudaMalloc((void**)&deviceOutBuf, inSize), "Failed to allocate deviceOutBuf");
-    cudaCheckError(cudaMalloc((void**)&deviceOutSize, sizeof(int)), "Failed to allocate deviceOutSize");
+    cudaCheckError(cudaMalloc((void**)&deviceOutSize, numOfStreams * sizeof(int)), "Failed to allocate deviceOutSize");
 
     cudaCheckError(cudaMalloc((void**)&deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks),
         "Failed to allocate deviceFlagOut");
-    cudaCheckError(cudaMalloc((void**)&deviceFlagSize, sizeof(int)), "Failed to allocate deviceFlagSize");
+    cudaCheckError(cudaMalloc((void**)&deviceFlagSize, numOfStreams * sizeof(int)), "Failed to allocate deviceFlagSize");
     cudaDeviceSynchronize();
     printf("%.6fs\n", timer.end());
 
-    // Copy: host to device -----------------------
-    printf("Copying data from host to device... ");
-    fflush(stdout);
-
+    // Streaming ----------------------------------
+    printf("Launching CUDA streams...\n  => Streams:");
     timer.begin();
     
     for (int i = 0; i < numOfStreams; ++i) {
@@ -122,34 +136,24 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaCheckError(cudaDeviceSynchronize(), "Failed to launch streaming kernel");
     printf("%.6fs\n", timer.end());
 
-    // Launch kernel ------------------------------
-    printf("Launching kernel... ");
-    fflush(stdout);
-
+    printf("Post processing and cleanup... ");
     timer.begin();
-    CompressKernel<<<nFlagBlocks, GPUBlockSize>>>(deviceInBuf, inSize,
-        deviceOutBuf, deviceOutSize,
-        deviceFlagOut, deviceFlagSize);
-    cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
-    printf("%.6fs\n", timer.end());
 
-    // Copy: device to host -----------------------
-    printf("Copying data from device to host... ");
-    fflush(stdout);
+    // Post process ------------------------------
+    outSize = flagSize = 0;
+    for (int i = 0; i < numOfStreams; ++i) {
+        outSize += hostOutSize[i];
+        flagSize += hostFlagSize[i];
+    }
 
-    timer.begin();
-    cudaCheckError(cudaMemcpy(&outSize, deviceOutSize, sizeof(int), cudaMemcpyDeviceToHost),
-        "Failed to copy deviceOutSize to host");
-    cudaCheckError(cudaMemcpy(&flagSize, deviceFlagSize, sizeof(int), cudaMemcpyDeviceToHost),
-        "Failed to copy deviceFlagSize to host");
+    // Cleanup -----------------------------------
+    for (int i = 0; i < numOfStreams; ++i) {
+        cudaCheckError(cudaStreamDestroy(cudaStreams[i]), "Failed to destroy CUDA streams");
+    }
 
-    cudaCheckError(cudaMemcpy(outBuf, deviceOutBuf, inSize, cudaMemcpyDeviceToHost),
-        "Failed to copy deviceOutBuf to host");
-    cudaCheckError(cudaMemcpy(flagOut, deviceFlagOut, sizeof(CompressFlagBlock) * nFlagBlocks, cudaMemcpyDeviceToHost),
-        "Failed to copy deviceFlagOut to host");
-    cudaDeviceSynchronize();
-    printf("%.6fs\n", timer.end());
-    fflush(stdout);
+    delete[] cudaStreams;
+    delete[] hostOutSize;
+    delete[] hostFlagSize;
 
     cudaFree(deviceInBuf);
     cudaFree(deviceOutBuf);
@@ -157,6 +161,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     cudaFree(deviceFlagOut);
     cudaFree(deviceFlagSize);
 
+    printf("%.6fs\n", timer.end());
     return std::make_pair(true, timerKernel.end());
 }
 

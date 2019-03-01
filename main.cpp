@@ -14,6 +14,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#ifndef GCC_TARGET
+#include <cuda_runtime_api.h>
+#endif
+
 #include "Settings.h"
 
 #include "BitHelper.h"
@@ -138,14 +142,21 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
 int main(int argc, char const* argv[])
 {
     char operation = 0, kernel = 0;
+    int gpus = 0;
 
     printf("CS 217 Final Project: CUDA verison of LZSS algorithm\n");
     printf("Copyright (C) 2019 Renjie Wu, Tong Shen, Zhihui Shao\n");
     printf("Build on " __DATE__ " " __TIME__ ".\n\n");
 
     printf("System information:\n");
-    printf("- # CPU cores in this system: %u\n\n", std::thread::hardware_concurrency());
+    printf("- # CPU cores in this system: %u\n", std::thread::hardware_concurrency());
 
+#ifndef GCC_TARGET
+    cudaGetDeviceCount(&gpus);
+    printf("- # GPUs installed in this sytem: %u\n", gpus);
+#endif
+    
+    printf("\n");
     if (argc != 4) {
         printf("Usage: %s <options> <input file> <output file>\n", argv[0]);
         printf("Available options:\n");
