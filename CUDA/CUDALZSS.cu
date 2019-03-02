@@ -187,59 +187,107 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
     const uint8_t* inBuf, int inSize, uint8_t* outBuf, int outSize)
 {
-    Timer timer(false), timerKernel;
+    Timer timer(false), timerKernel(false);
 
-    uint8_t *deviceInBuf, *deviceOutBuf;
-    CompressFlagBlock* deviceFlagIn;
+    uint8_t **deviceInBuf, **deviceOutBuf;
+    CompressFlagBlock** deviceFlagIn;
 
+    int numOfGPUs = 0;
+    cudaGetDeviceCount(&numOfGPUs);
+
+    auto totalGPUBlocks = (nFlagBlocks - 1) / GPUBlockSize + 1;
+    auto numOfKernels = std::min(totalGPUBlocks / numOfGPUs, numOfGPUs);
+    auto gpuBlocksPerKernel = (totalGPUBlocks - 1) / numOfKernels + 1;
+    auto dataBlocksPerKernel = gpuBlocksPerKernel * GPUBlockSize;
+    auto alignedKernelSize = dataBlocksPerKernel * DataBlockSize;
+    
     // Allocate ----------------------------------
     printf("Allocating device variables... ");
-    fflush(stdout);
-
     timer.begin();
-    cudaCheckError(cudaMalloc((void**)&deviceInBuf, inSize), "Failed to allocate deviceInBuf");
-    cudaCheckError(cudaMalloc((void**)&deviceOutBuf, outSize), "Failed to allocate deviceOutBuf");
-    cudaCheckError(cudaMalloc((void**)&deviceFlagIn, sizeof(CompressFlagBlock) * nFlagBlocks),
-        "Failed to allocate deviceFlagIn");
-    cudaDeviceSynchronize();
+
+    deviceInBuf = new uint8_t*[numOfKernels];
+    deviceOutBuf = new uint8_t*[numOfKernels];
+    deviceFlagIn = new CompressFlagBlock*[numOfKernels];
+
+    for (int i = 0; i < numOfKernels; ++i) {
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
+
+        auto kernelOutSize = std::min(alignedKernelSize, outSize - i * alignedKernelSize);
+        auto numOfDataBlock = std::min(dataBlocksPerKernel, nFlagBlocks - i * dataBlocksPerKernel);
+
+        cudaCheckError(cudaMalloc((void**)&deviceInBuf[i], inSize), "Failed to allocate deviceInBuf");
+        cudaCheckError(cudaMalloc((void**)&deviceOutBuf[i], kernelOutSize), "Failed to allocate deviceOutBuf");
+        cudaCheckError(cudaMalloc((void**)&deviceFlagIn[i], sizeof(CompressFlagBlock) * numOfDataBlock),
+            "Failed to allocate deviceFlagIn");
+
+        cudaDeviceSynchronize();
+    }
     printf("%.6fs\n", timer.end());
 
-    // Copy: host to device -----------------------
-    printf("Copying data from host to device... ");
-    fflush(stdout);
+    // Multi-GPU ----------------------------------
+    printf("Launching kernels on multiple GPUs...\n  => GPU:");
+    timer.begin(); timerKernel.begin();
 
-    timer.begin();
-    cudaCheckError(cudaMemcpy(deviceInBuf, inBuf, inSize, cudaMemcpyHostToDevice),
-        "Failed to copy inBuf to device");
-    cudaCheckError(cudaMemcpy(deviceFlagIn, flagIn, sizeof(CompressFlagBlock) * nFlagBlocks, cudaMemcpyHostToDevice),
-        "Failed to copy flagIn to device");
-    cudaDeviceSynchronize();
+    for (int i = 0; i < numOfKernels; ++i) {
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
+
+        auto numOfDataBlock = std::min(dataBlocksPerKernel, nFlagBlocks - i * dataBlocksPerKernel);
+
+        // Copy: host to device -------------------
+        cudaCheckError(cudaMemcpyAsync(deviceInBuf[i], inBuf, inSize, cudaMemcpyHostToDevice),
+            "Failed to copy inBuf to device");
+
+        cudaCheckError(cudaMemcpyAsync(deviceFlagIn[i],
+                           flagIn + i * dataBlocksPerKernel, sizeof(CompressFlagBlock) * numOfDataBlock,
+                           cudaMemcpyHostToDevice),
+            "Failed to copy flagIn to device");
+    }
+
+    for (int i = 0; i < numOfKernels; ++i) {
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
+
+        auto kernelInSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
+        auto numOfDataBlock = std::min(dataBlocksPerKernel, nFlagBlocks - i * dataBlocksPerKernel);
+        auto numOfGPUBlock = std::min(gpuBlocksPerKernel, totalGPUBlocks - i * gpuBlocksPerKernel);
+
+        printf(" [%d]", i);
+        fflush(stdout);
+
+        // Launch kernel ------------------------------
+        DecompressKernel<<<numOfGPUBlock, GPUBlockSize>>>(deviceFlagIn[i], numOfDataBlock, 
+            deviceInBuf[i], deviceOutBuf[i]);
+    }
+
+    for (int i = 0; i < numOfKernels; ++i) {
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
+
+        auto kernelOutSize = std::min(alignedKernelSize, outSize - i * alignedKernelSize);
+
+        // Copy: device to host -----------------------
+        cudaCheckError(cudaMemcpyAsync(outBuf + i * alignedKernelSize,
+                           deviceOutBuf[i], kernelOutSize,
+                           cudaMemcpyDeviceToHost),
+            "Failed to copy deviceOutBuf to host");
+    }
+
+    printf("\nWaiting for kernel exeuction complete... ");
+    for (int i = 0; i < numOfKernels; ++i) {
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
+        cudaCheckError(cudaDeviceSynchronize(), "Failed to launch multi-GPU kernel");
+    }
     printf("%.6fs\n", timer.end());
+    auto elapsed = timerKernel.end();
 
-    // Launch kernel ------------------------------
-    printf("Launching kernel... ");
-    fflush(stdout);
+    for (int i = 0; i < numOfKernels; ++i) {
+        cudaCheckError(cudaSetDevice(i), "Failed to set device");
+        cudaFree(deviceInBuf[i]);
+        cudaFree(deviceOutBuf[i]);
+        cudaFree(deviceFlagIn[i]);
+    }
 
-    timer.begin();
-    auto dimGrid = (nFlagBlocks - 1) / GPUBlockSize + 1;
-    DecompressKernel<<<dimGrid, GPUBlockSize>>>(deviceFlagIn, nFlagBlocks, deviceInBuf, deviceOutBuf);
-    cudaCheckError(cudaDeviceSynchronize(), "Failed to launch kernel");
-    printf("%.6fs\n", timer.end());
+    delete[] deviceInBuf;
+    delete[] deviceOutBuf;
+    delete[] deviceFlagIn;
 
-    // Copy: device to host -----------------------
-    printf("Copying data from device to host... ");
-    fflush(stdout);
-
-    timer.begin();
-    cudaCheckError(cudaMemcpy(outBuf, deviceOutBuf, outSize, cudaMemcpyDeviceToHost),
-        "Failed to copy deviceOutBuf to host");
-    cudaDeviceSynchronize();
-    printf("%.6fs\n", timer.end());
-    fflush(stdout);
-
-    cudaFree(deviceInBuf);
-    cudaFree(deviceOutBuf);
-    cudaFree(deviceFlagIn);
-
-    return std::make_pair(true, timerKernel.end());
+    return std::make_pair(true, elapsed);
 }
