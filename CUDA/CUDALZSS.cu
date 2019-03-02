@@ -34,7 +34,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     uint8_t* outBuf, int& outSize,
     CompressFlagBlock* flagOut, int nFlagBlocks, int& flagSize)
 {
-    Timer timer(false), timerKernel;
+    Timer timer(false), timerKernel(false);
 
     uint8_t **deviceInBuf, **deviceOutBuf;
     CompressFlagBlock** deviceFlagOut;
@@ -82,7 +82,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
 
     // Multi-GPU ----------------------------------
     printf("Launching kernels on multiple GPUs...\n  => GPU:");
-    timer.begin();
+    timer.begin(); timerKernel.begin();
 
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
@@ -160,6 +160,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
         outSize += hostOutSize[i];
         flagSize += hostFlagSize[i];
     }
+    auto elapsed = timerKernel.end();
 
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
@@ -180,7 +181,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     delete[] hostFlagSize;
 
     printf("%.6fs\n", timer.end());
-    return std::make_pair(true, timerKernel.end());
+    return std::make_pair(true, elapsed);
 }
 
 std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
