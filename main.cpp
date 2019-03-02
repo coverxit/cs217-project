@@ -203,6 +203,7 @@ int main(int argc, char const* argv[])
     if (inStream) {
         auto inBuf = new uint8_t[inStream.size()];
 
+        printf("Reading from file %s\n", argv[2]);
         if (inStream.read(inBuf, inStream.size(), std::thread::hardware_concurrency())) {
             AbstractLZSS* lzss = nullptr;
             switch (kernel) {
