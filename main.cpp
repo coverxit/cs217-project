@@ -80,7 +80,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     if (retVal.second >= 0) {
         printf("Time (Kernel): %10.6f secs\n", retVal.second);
     } else {
-        printf("Time (Kernel):        N/A (Use nvporf to measure)\n");
+        printf("Time (Kernel):        N/A (Use nvprof to measure)\n");
     }
 
     delete[] outBuf;
@@ -140,7 +140,7 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     if (retVal.second >= 0) {
         printf("Time (Kernel): %10.6f secs\n", retVal.second);
     } else {
-        printf("Time (Kernel):        N/A (Use nvporf to measure)\n");
+        printf("Time (Kernel):        N/A (Use nvprof to measure)\n");
     }
 
     delete[] flagBlocks;
