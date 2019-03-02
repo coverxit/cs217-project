@@ -292,9 +292,6 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFla
 
         auto kernelOutSize = std::min(alignedKernelSize, outSize - i * alignedKernelSize);
 
-        printf(" [%d]", i);
-        fflush(stdout);
-
         cudaCheckError(cudaMemcpyAsync(outBuf + i * alignedKernelSize,
                            deviceOutBuf[i], kernelOutSize,
                            cudaMemcpyDeviceToHost),
