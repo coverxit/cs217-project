@@ -19,7 +19,7 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int i
     uint8_t* outBuf, int& outSize,
     CompressFlagBlock* flagOut, int nFlagBlocks, int& flagSize)
 {
-    Timer timer;
+    Timer timer(false);
     
     std::atomic_int atomicOutSize(0), atomicFlagSize(0), atomicBlocksDone(0);
 
@@ -39,6 +39,7 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int i
     threads.reserve(nThreads);
 
     // Process block in parallel
+    timer.begin();
     for (int i = 0; i < nThreads; ++i) {
         auto chunk = (nFlagBlocks - 1) / nThreads + 1;
         auto offset = chunk * i;
@@ -77,7 +78,7 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int i
 std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
     const uint8_t* inBuf, int inSize, uint8_t* outBuf, int outSize)
 {
-    Timer timer;
+    Timer timer(false);
     
     auto nThreads = std::thread::hardware_concurrency();
 
@@ -95,6 +96,7 @@ std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn
     threads.reserve(nThreads);
 
     // Process block in parallel
+    timer.begin();
     for (int i = 0; i < nThreads; ++i) {
         auto chunk = (nFlagBlocks - 1) / nThreads + 1;
         auto offset = chunk * i;
