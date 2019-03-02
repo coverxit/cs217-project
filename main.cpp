@@ -77,11 +77,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     printf(" - Content:    %10d bytes\n", outSize);
     printf(" - # Blocks:   %10d\n", nFlagBlocks);
     printf("Ratio:         %10.6f\n", (float) inSize / totalOutSize);
-    if (retVal.second >= 0) {
-        printf("Time (Kernel): %10.6f secs\n", retVal.second);
-    } else {
-        printf("Time (Kernel):        N/A (Use nvprof to measure)\n");
-    }
+    printf("Time (Kernel): %10.6f secs\n", retVal.second);
 
     delete[] outBuf;
     delete[] flagBlocks;
@@ -137,11 +133,7 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     printf(" - # Blocks:   %10d\n", nFlagBlocks);
     printf("Out:           %10d bytes\n", outSize);
     printf("Ratio:         %10.6f\n", (float) outSize / inSize);
-    if (retVal.second >= 0) {
-        printf("Time (Kernel): %10.6f secs\n", retVal.second);
-    } else {
-        printf("Time (Kernel):        N/A (Use nvprof to measure)\n");
-    }
+    printf("Time (Kernel): %10.6f secs\n", retVal.second);
 
     delete[] flagBlocks;
     delete[] outBuf;
