@@ -44,6 +44,15 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     int numOfGPUs = 0;
     cudaGetDeviceCount(&numOfGPUs);
 
+    auto envStr = getenv("GPUS");
+    if (envStr) {
+        auto envVal = atoi(envStr);
+        if (envVal > 0) {
+            numOfGPUs = std::min(numOfGPUs, envVal);
+        }
+    }
+    printf("Number of GPUs used: %d\n", numOfGPUs);
+
     auto numOfKernels = std::min(nFlagBlocks / numOfGPUs, numOfGPUs);
     auto blocksPerKernel = (nFlagBlocks - 1) / numOfKernels + 1;
     auto alignedKernelSize = blocksPerKernel * DataBlockSize;
@@ -207,6 +216,15 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFla
 
     int numOfGPUs = 0;
     cudaGetDeviceCount(&numOfGPUs);
+
+    auto envStr = getenv("GPUS");
+    if (envStr) {
+        auto envVal = atoi(envStr);
+        if (envVal > 0) {
+            numOfGPUs = std::min(numOfGPUs, envVal);
+        }
+    }
+    printf("Number of GPUs used: %d\n", numOfGPUs);
 
     auto totalGPUBlocks = (nFlagBlocks - 1) / GPUBlockSize + 1;
     auto numOfKernels = std::min(totalGPUBlocks / numOfGPUs, numOfGPUs);
