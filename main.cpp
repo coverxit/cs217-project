@@ -144,7 +144,7 @@ int main(int argc, char const* argv[])
     char operation = 0, kernel = 0;
     int gpus = 0;
 
-    printf("CS 217 Final Project: CUDA version of LZSS algorithm\n");
+    printf("CS 217 Final Project: LZSS compression algorithm in CUDA\n");
     printf("Copyright (C) 2019 Renjie Wu, Tong Shen, Zhihui Shao\n");
     printf("Build on " __DATE__ " " __TIME__ ".\n\n");
 
