@@ -153,7 +153,7 @@ int main(int argc, char const* argv[])
 
 #ifndef GCC_TARGET
     cudaGetDeviceCount(&gpus);
-    printf("- # GPUs installed in this sytem: %u\n", gpus);
+    printf("- # GPUs in this system: %u\n", gpus);
 #endif
     
     printf("\n");
