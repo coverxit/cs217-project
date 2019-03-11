@@ -15,9 +15,9 @@
 #define MIN(a, b) \
     ((a) < (b) ? (a) : (b))
 
-__global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
-    uint8_t* deviceOutBuf, int* deviceOutSize,
-    CompressFlagBlock* deviceFlagOut, int* deviceFlagSize)
+__global__ void CompressKernel(const uint8_t* deviceInBuf, int64_t inSize,
+    uint8_t* deviceOutBuf, int64_t* deviceOutSize,
+    CompressFlagBlock* deviceFlagOut, int64_t* deviceFlagSize)
 {
     __shared__ uint8_t blockBuf[DataBlockSize];
     __shared__ PairType blockFlags[DataBlockSize];
@@ -25,8 +25,8 @@ __global__ void CompressKernel(const uint8_t* deviceInBuf, int inSize,
     auto threadId = threadIdx.x;
     auto blockId = blockIdx.x;
 
-    auto blockOffset = blockId * DataBlockSize;
-    auto blockSize = MIN(DataBlockSize, inSize - blockOffset);
+    int64_t blockOffset = blockId * DataBlockSize;
+    int64_t blockSize = MIN(DataBlockSize, inSize - blockOffset);
 
     for (int t = threadId; t < blockSize; t += blockDim.x) {
         blockBuf[t] = deviceInBuf[blockOffset + t];

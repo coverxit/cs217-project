@@ -17,13 +17,13 @@ class AbstractLZSS {
 public:
     virtual ~AbstractLZSS() {}
 
-    virtual std::pair<bool, double> compress(const uint8_t* inBuf, int inSize,
-        uint8_t* outBuf, int& outSize,
-        CompressFlagBlock* flagOut, int nFlagBlocks, int& flagSize)
+    virtual std::pair<bool, double> compress(const uint8_t* inBuf, int64_t inSize,
+        uint8_t* outBuf, int64_t& outSize,
+        CompressFlagBlock* flagOut, int64_t nFlagBlocks, int64_t& flagSize)
         = 0;
 
-    virtual std::pair<bool, double> decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
-        const uint8_t* inBuf, int inSize, uint8_t* outBuf, int outSize)
+    virtual std::pair<bool, double> decompress(CompressFlagBlock* flagIn, int64_t nFlagBlocks,
+        const uint8_t* inBuf, int64_t inSize, uint8_t* outBuf, int64_t outSize)
         = 0;
 
 public:

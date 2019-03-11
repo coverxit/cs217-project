@@ -23,7 +23,7 @@ public:
         }
 
         if (buf.st_size > MaxFileSize) {
-            fprintf(stderr, "[ConcurrentInputStream] %s's size (%ld bytes) is larger than allowed (%d bytes)\n",
+            fprintf(stderr, "[ConcurrentInputStream] %s's size (%" PRId64 " bytes) is larger than allowed (%d bytes)\n",
                 name, buf.st_size, MaxFileSize);
             goto cleanup;
         }
@@ -44,7 +44,7 @@ public:
         exit(-1);
     }
 
-    int read(uint8_t* buf, int size, int nThreads)
+    int64_t read(uint8_t* buf, int64_t size, int nThreads)
     {
         return ConcurrentStream::concurrentCopy(buf, m_ptr, size, nThreads);
     }
