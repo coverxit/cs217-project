@@ -30,16 +30,16 @@ inline void _gerror(cudaError_t cudaError, const char* msg)
     exit(-1);
 }
 
-std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int64_t inSize,
-    uint8_t* outBuf, int64_t& outSize,
-    CompressFlagBlock* flagOut, int64_t nFlagBlocks, int64_t& flagSize)
+std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
+    uint8_t* outBuf, int& outSize,
+    CompressFlagBlock* flagOut, int nFlagBlocks, int& flagSize)
 {
     Timer timer(false);
 
     uint8_t **deviceInBuf, **deviceOutBuf;
     CompressFlagBlock** deviceFlagOut;
-    int64_t **deviceOutSize, **deviceFlagSize;
-    int64_t *hostOutSize, *hostFlagSize;
+    int **deviceOutSize, **deviceFlagSize;
+    int *hostOutSize, *hostFlagSize;
 
     int numOfGPUs = 0;
     cudaGetDeviceCount(&numOfGPUs);
@@ -53,9 +53,9 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int64_t inSize,
     }
     printf("Number of GPUs used: %d\n", numOfGPUs);
 
-    int64_t numOfKernels = std::min(nFlagBlocks / numOfGPUs, numOfGPUs);
-    int64_t blocksPerKernel = (nFlagBlocks - 1) / numOfKernels + 1;
-    int64_t alignedKernelSize = blocksPerKernel * DataBlockSize;
+    auto numOfKernels = std::min(nFlagBlocks / numOfGPUs, numOfGPUs);
+    auto blocksPerKernel = (nFlagBlocks - 1) / numOfKernels + 1;
+    auto alignedKernelSize = blocksPerKernel * DataBlockSize;
 
     // Allocate ----------------------------------
     printf("Allocating device variables... ");
@@ -64,26 +64,26 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int64_t inSize,
     deviceInBuf = new uint8_t*[numOfKernels];
     deviceOutBuf = new uint8_t*[numOfKernels];
     deviceFlagOut = new CompressFlagBlock*[numOfKernels];
-    deviceOutSize = new int64_t*[numOfKernels];
-    deviceFlagSize = new int64_t*[numOfKernels];
+    deviceOutSize = new int*[numOfKernels];
+    deviceFlagSize = new int*[numOfKernels];
 
-    hostOutSize = new int64_t[numOfKernels];
-    hostFlagSize = new int64_t[numOfKernels];
+    hostOutSize = new int[numOfKernels];
+    hostFlagSize = new int[numOfKernels];
 
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
-        int64_t kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
-        int64_t numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
+        auto kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
+        auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
 
         cudaCheckError(cudaMalloc((void**)&deviceInBuf[i], kernelSize), "Failed to allocate deviceInBuf");
 
         cudaCheckError(cudaMalloc((void**)&deviceOutBuf[i], kernelSize), "Failed to allocate deviceOutBuf");
-        cudaCheckError(cudaMalloc((void**)&deviceOutSize[i], sizeof(int64_t)), "Failed to allocate deviceOutSize");
+        cudaCheckError(cudaMalloc((void**)&deviceOutSize[i], sizeof(int)), "Failed to allocate deviceOutSize");
 
         cudaCheckError(cudaMalloc((void**)&deviceFlagOut[i], sizeof(CompressFlagBlock) * numOfBlock),
             "Failed to allocate deviceFlagOut");
-        cudaCheckError(cudaMalloc((void**)&deviceFlagSize[i], sizeof(int64_t)), "Failed to allocate deviceFlagSize");
+        cudaCheckError(cudaMalloc((void**)&deviceFlagSize[i], sizeof(int)), "Failed to allocate deviceFlagSize");
 
         cudaDeviceSynchronize();
     }
@@ -96,8 +96,8 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int64_t inSize,
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
-        int64_t kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
-        int64_t numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
+        auto kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
+        auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
 
         cudaCheckError(cudaMemcpyAsync(deviceInBuf[i],
                            inBuf + i * alignedKernelSize, kernelSize,
@@ -107,8 +107,8 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int64_t inSize,
         cudaCheckError(cudaMemsetAsync(deviceFlagOut[i], 0, sizeof(CompressFlagBlock) * numOfBlock),
             "Failed to set deviceFlagOut to 0");
 
-        cudaCheckError(cudaMemsetAsync(deviceOutSize[i], 0, sizeof(int64_t)), "Failed to set deviceOutSize to 0");
-        cudaCheckError(cudaMemsetAsync(deviceFlagSize[i], 0, sizeof(int64_t)), "Failed to set deviceFlagSize to 0");
+        cudaCheckError(cudaMemsetAsync(deviceOutSize[i], 0, sizeof(int)), "Failed to set deviceOutSize to 0");
+        cudaCheckError(cudaMemsetAsync(deviceFlagSize[i], 0, sizeof(int)), "Failed to set deviceFlagSize to 0");
     }
 
     for (int i = 0; i < numOfKernels; ++i) {
@@ -119,14 +119,13 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int64_t inSize,
     
     // Launch kernel ----------------------------------
     printf("Launching kernel... ");
-    fflush(stdout);
     timer.begin();
 
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
-        int64_t kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
-        int64_t numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
+        auto kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
+        auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
 
         CompressKernel<<<numOfBlock, GPUBlockSize>>>(
             deviceInBuf[i], kernelSize,
@@ -148,8 +147,8 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int64_t inSize,
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
-        int64_t kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
-        int64_t numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
+        auto kernelSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
+        auto numOfBlock = std::min(blocksPerKernel, nFlagBlocks - i * blocksPerKernel);
 
         cudaCheckError(cudaMemcpyAsync(outBuf + i * alignedKernelSize,
                            deviceOutBuf[i], kernelSize,
@@ -162,10 +161,10 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int64_t inSize,
             "Failed to copy deviceFlagOut to host");
 
         cudaCheckError(cudaMemcpyAsync(hostOutSize + i, deviceOutSize[i],
-                           sizeof(int64_t), cudaMemcpyDeviceToHost),
+                           sizeof(int), cudaMemcpyDeviceToHost),
             "Failed to copy deviceOutSize to host");
         cudaCheckError(cudaMemcpyAsync(hostFlagSize + i, deviceFlagSize[i],
-                           sizeof(int64_t), cudaMemcpyDeviceToHost),
+                           sizeof(int), cudaMemcpyDeviceToHost),
             "Failed to copy deviceFlagSize to host");
     }
 
@@ -207,8 +206,8 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int64_t inSize,
     return std::make_pair(true, elasped);
 }
 
-std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int64_t nFlagBlocks,
-    const uint8_t* inBuf, int64_t inSize, uint8_t* outBuf, int64_t outSize)
+std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
+    const uint8_t* inBuf, int inSize, uint8_t* outBuf, int outSize)
 {
     Timer timer(false);
 
@@ -227,11 +226,11 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int64_t 
     }
     printf("Number of GPUs used: %d\n", numOfGPUs);
 
-    int64_t totalGPUBlocks = (nFlagBlocks - 1) / GPUBlockSize + 1;
-    int64_t numOfKernels = std::min(totalGPUBlocks / numOfGPUs, numOfGPUs);
-    int64_t gpuBlocksPerKernel = (totalGPUBlocks - 1) / numOfKernels + 1;
-    int64_t dataBlocksPerKernel = gpuBlocksPerKernel * GPUBlockSize;
-    int64_t alignedKernelSize = dataBlocksPerKernel * DataBlockSize;
+    auto totalGPUBlocks = (nFlagBlocks - 1) / GPUBlockSize + 1;
+    auto numOfKernels = std::min(totalGPUBlocks / numOfGPUs, numOfGPUs);
+    auto gpuBlocksPerKernel = (totalGPUBlocks - 1) / numOfKernels + 1;
+    auto dataBlocksPerKernel = gpuBlocksPerKernel * GPUBlockSize;
+    auto alignedKernelSize = dataBlocksPerKernel * DataBlockSize;
     
     // Allocate ----------------------------------
     printf("Allocating device variables... ");
@@ -244,8 +243,8 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int64_t 
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
-        int64_t kernelOutSize = std::min(alignedKernelSize, outSize - i * alignedKernelSize);
-        int64_t numOfDataBlock = std::min(dataBlocksPerKernel, nFlagBlocks - i * dataBlocksPerKernel);
+        auto kernelOutSize = std::min(alignedKernelSize, outSize - i * alignedKernelSize);
+        auto numOfDataBlock = std::min(dataBlocksPerKernel, nFlagBlocks - i * dataBlocksPerKernel);
 
         cudaCheckError(cudaMalloc((void**)&deviceInBuf[i], inSize), "Failed to allocate deviceInBuf");
         cudaCheckError(cudaMalloc((void**)&deviceOutBuf[i], kernelOutSize), "Failed to allocate deviceOutBuf");
@@ -263,7 +262,7 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int64_t 
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
-        int64_t numOfDataBlock = std::min(dataBlocksPerKernel, nFlagBlocks - i * dataBlocksPerKernel);
+        auto numOfDataBlock = std::min(dataBlocksPerKernel, nFlagBlocks - i * dataBlocksPerKernel);
 
         cudaCheckError(cudaMemcpyAsync(deviceInBuf[i], inBuf, inSize, cudaMemcpyHostToDevice),
             "Failed to copy inBuf to device");
@@ -282,15 +281,14 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int64_t 
 
     // Launch kernel ----------------------------------
     printf("Launching kernel... ");
-    fflush(stdout);
     timer.begin();
 
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
-        int64_t kernelInSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
-        int64_t numOfDataBlock = std::min(dataBlocksPerKernel, nFlagBlocks - i * dataBlocksPerKernel);
-        int64_t numOfGPUBlock = std::min(gpuBlocksPerKernel, totalGPUBlocks - i * gpuBlocksPerKernel);
+        auto kernelInSize = std::min(alignedKernelSize, inSize - i * alignedKernelSize);
+        auto numOfDataBlock = std::min(dataBlocksPerKernel, nFlagBlocks - i * dataBlocksPerKernel);
+        auto numOfGPUBlock = std::min(gpuBlocksPerKernel, totalGPUBlocks - i * gpuBlocksPerKernel);
 
         DecompressKernel<<<numOfGPUBlock, GPUBlockSize>>>(deviceFlagIn[i], numOfDataBlock, 
             deviceInBuf[i], deviceOutBuf[i]);
@@ -310,7 +308,7 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int64_t 
     for (int i = 0; i < numOfKernels; ++i) {
         cudaCheckError(cudaSetDevice(i), "Failed to set device");
 
-        int64_t kernelOutSize = std::min(alignedKernelSize, outSize - i * alignedKernelSize);
+        auto kernelOutSize = std::min(alignedKernelSize, outSize - i * alignedKernelSize);
 
         cudaCheckError(cudaMemcpyAsync(outBuf + i * alignedKernelSize,
                            deviceOutBuf[i], kernelOutSize,

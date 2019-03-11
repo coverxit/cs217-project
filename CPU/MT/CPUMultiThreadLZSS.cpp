@@ -15,13 +15,13 @@
 #include "../BlockHelper.h"
 #include "CPUMultiThreadLZSS.h"
 
-std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int64_t inSize,
-    uint8_t* outBuf, int64_t& outSize,
-    CompressFlagBlock* flagOut, int64_t nFlagBlocks, int64_t& flagSize)
+std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int inSize,
+    uint8_t* outBuf, int& outSize,
+    CompressFlagBlock* flagOut, int nFlagBlocks, int& flagSize)
 {
     Timer timer(false);
     
-    std::atomic_int64_t atomicOutSize(0), atomicFlagSize(0), atomicBlocksDone(0);
+    std::atomic_int atomicOutSize(0), atomicFlagSize(0), atomicBlocksDone(0);
 
     auto nThreads = std::thread::hardware_concurrency();
 
@@ -41,21 +41,21 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int64
     // Process block in parallel
     timer.begin();
     for (int i = 0; i < nThreads; ++i) {
-        int64_t chunk = (nFlagBlocks - 1) / nThreads + 1;
-        int64_t offset = chunk * i;
-        int64_t length = std::min(chunk, nFlagBlocks - offset);
+        auto chunk = (nFlagBlocks - 1) / nThreads + 1;
+        auto offset = chunk * i;
+        auto length = std::min(chunk, nFlagBlocks - offset);
 
         threads.emplace_back([&, offset, length]() {
-            int64_t tempOutSize = 0, tempFlagSize = 0;
+            int tempOutSize = 0, tempFlagSize = 0;
 
-            for (int64_t j = offset; j < offset + length; ++j) {
+            for (int j = offset; j < offset + length; ++j) {
                 BlockCompress(j, inBuf, inSize, outBuf, tempOutSize, flagOut, tempFlagSize,
-                    [nFlagBlocks, &atomicBlocksDone](int64_t blockId) {
+                    [nFlagBlocks, &atomicBlocksDone](int blockId) {
                         // Fetch and add
-                        int64_t fetch = atomicBlocksDone.fetch_add(1) + 1;
+                        auto fetch = atomicBlocksDone.fetch_add(1) + 1;
 
                         if (fetch % 100 == 0) {
-                            printf("Block %" PRId64 "/%" PRId64 " done.\n", atomicBlocksDone.load(), nFlagBlocks);
+                            printf("Block %d/%d done.\n", atomicBlocksDone.load(), nFlagBlocks);
                         }
                     });
             }
@@ -75,8 +75,8 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int64
     return std::make_pair(true, timer.end());
 }
 
-std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn, int64_t nFlagBlocks,
-    const uint8_t* inBuf, int64_t inSize, uint8_t* outBuf, int64_t outSize)
+std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn, int nFlagBlocks,
+    const uint8_t* inBuf, int inSize, uint8_t* outBuf, int outSize)
 {
     Timer timer(false);
     
@@ -98,12 +98,12 @@ std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn
     // Process block in parallel
     timer.begin();
     for (int i = 0; i < nThreads; ++i) {
-        int64_t chunk = (nFlagBlocks - 1) / nThreads + 1;
-        int64_t offset = chunk * i;
-        int64_t length = std::min(chunk, nFlagBlocks - offset);
+        auto chunk = (nFlagBlocks - 1) / nThreads + 1;
+        auto offset = chunk * i;
+        auto length = std::min(chunk, nFlagBlocks - offset);
 
         threads.emplace_back([&, offset, length]() {
-            for (int64_t j = offset; j < offset + length; ++j) {
+            for (int j = offset; j < offset + length; ++j) {
                 BlockDecompress(j, flagIn, inBuf, outBuf);
             }
         });

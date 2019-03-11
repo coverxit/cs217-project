@@ -1,10 +1,10 @@
 #pragma once
 
-void BlockCompress(int64_t blockId, const uint8_t* inBuf, int64_t inSize,
-    uint8_t* outBuf, int64_t& outSize,
-    CompressFlagBlock* flagOut, int64_t& flagSize,
-    std::function<void(int64_t)> finishCallback = nullptr);
+void BlockCompress(int blockId, const uint8_t* inBuf, int inSize,
+    uint8_t* outBuf, int& outSize,
+    CompressFlagBlock* flagOut, int& flagSize,
+    std::function<void(int)> finishCallback = nullptr);
 
-void BlockDecompress(int64_t blockId, CompressFlagBlock* flagIn,
+void BlockDecompress(int blockId, CompressFlagBlock* flagIn,
     const uint8_t* inBuf, uint8_t* outBuf,
-    std::function<void(int64_t)> finishCallback = nullptr);
+    std::function<void(int)> finishCallback = nullptr);

@@ -18,7 +18,7 @@ protected:
     {
     }
 
-    ConcurrentStream(const ConcurrentOutputStream*, int64_t size)
+    ConcurrentStream(const ConcurrentOutputStream*, int size)
         : m_reader(false)
         , m_name("ConcurrentOnputStream")
         , m_fd(-1)
@@ -32,7 +32,7 @@ public:
 
     operator bool() const { return m_fd >= 0; }
 
-    int64_t size() const { return m_size; }
+    int size() const { return m_size; }
 
     void close()
     {
@@ -46,7 +46,7 @@ public:
     }
 
 protected:
-    int64_t concurrentCopy(uint8_t* dst, const uint8_t* src, int64_t size, int nThreads)
+    int concurrentCopy(uint8_t* dst, const uint8_t* src, int size, int nThreads)
     {
         if (m_fd < 0) {
             fprintf(stderr, "[%s] File not opened.\n", m_name);
@@ -54,8 +54,7 @@ protected:
         }
 
         if (m_reader && size < m_size) {
-            fprintf(stderr, "[%s] Buffer too small (%" PRId64 " bytes), expected %" PRId64 " bytes.\n",
-                m_name, size, m_size);
+            fprintf(stderr, "[%s] Buffer too small (%d bytes), expected %d bytes.\n", m_name, size, m_size);
             return 0;
         }
 
@@ -74,9 +73,9 @@ protected:
 
         // Read/write file in parallel
         for (int i = 0; i < nThreads; ++i) {
-            int64_t chunk = (size - 1) / nThreads + 1;
-            int64_t offset = chunk * i;
-            int64_t length = std::min(chunk, size - offset);
+            auto chunk = (size - 1) / nThreads + 1;
+            auto offset = chunk * i;
+            auto length = std::min(chunk, size - offset);
 
             threads.emplace_back([=] {
                 memcpy(dst + offset, src + offset, length);
@@ -90,11 +89,11 @@ protected:
         return size;
     }
 
-    int64_t concurrentCopy(uint8_t* dst, const uint8_t* src,
-        std::vector<std::pair<int64_t, int64_t>>& offsets, std::vector<int64_t>& sizes,
+    int concurrentCopy(uint8_t* dst, const uint8_t* src,
+        std::vector<std::pair<int, int>>& offsets, std::vector<int>& sizes,
         int nThreads)
     {
-        std::atomic_int64_t size(0);
+        std::atomic_int size(0);
 
         if (m_fd < 0) {
             fprintf(stderr, "[%s] File not opened.\n", m_name);
@@ -120,12 +119,12 @@ protected:
 
         // Read/write file in parallel
         for (int i = 0; i < nThreads; ++i) {
-            int64_t chunk = (offsets.size() - 1) / nThreads + 1;
-            int64_t offset = chunk * i;
-            int64_t length = std::min(chunk, offsets.size() - offset);
+            auto chunk = (offsets.size() - 1) / nThreads + 1;
+            auto offset = chunk * i;
+            auto length = std::min(chunk, offsets.size() - offset);
 
             threads.emplace_back([&offsets, &sizes, dst, src, offset, length, &size] {
-                for (int64_t j = offset; j < offset + length; ++j) {
+                for (int j = offset; j < offset + length; ++j) {
                     memcpy(dst + offsets[j].first, src + offsets[j].second, sizes[j]);
                     size += sizes[j];
                 }
@@ -140,8 +139,7 @@ protected:
     }
 
 protected:
-    int m_fd;
-    int64_t m_size;
+    int m_fd, m_size;
     uint8_t* m_ptr;
 
     bool m_reader;

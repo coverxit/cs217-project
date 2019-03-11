@@ -12,17 +12,17 @@
 
 #include "BlockHelper.h"
 
-void BlockCompress(int64_t blockId,
-    const uint8_t* inBuf, int64_t inSize,
-    uint8_t* outBuf, int64_t& outSize,
-    CompressFlagBlock* flagOut, int64_t& flagSize,
-    std::function<void(int64_t)> finishCallback)
+void BlockCompress(int blockId,
+    const uint8_t* inBuf, int inSize,
+    uint8_t* outBuf, int& outSize,
+    CompressFlagBlock* flagOut, int& flagSize,
+    std::function<void(int)> finishCallback)
 {
-    int64_t blockOffset = blockId * DataBlockSize;
-    int64_t blockSize = std::min(DataBlockSize, inSize - blockOffset);
-    int64_t blockBuf = inBuf + blockOffset;
+    auto blockOffset = blockId * DataBlockSize;
+    auto blockSize = std::min(DataBlockSize, inSize - blockOffset);
+    auto blockBuf = inBuf + blockOffset;
 
-    int64_t nFlags = 0, written = 0;
+    int nFlags = 0, written = 0;
     for (int j = 0; j < blockSize;) {
         auto lookbackLength = std::min(WindowSize, j);
         auto lookaheadLength = std::min(MaxEncodeLength, blockSize - j);
@@ -65,13 +65,13 @@ void BlockCompress(int64_t blockId,
     }
 }
 
-void BlockDecompress(int64_t blockId,
+void BlockDecompress(int blockId,
     CompressFlagBlock* flagIn,
     const uint8_t* inBuf, uint8_t* outBuf,
-    std::function<void(int64_t)> finishCallback)
+    std::function<void(int)> finishCallback)
 {
-    int64_t inOffset = flagIn[blockId].CompressedOffset;
-    int64_t outOffset = blockId * DataBlockSize;
+    auto inOffset = flagIn[blockId].CompressedOffset;
+    auto outOffset = blockId * DataBlockSize;
 
     for (int j = 0; j < flagIn[blockId].NumOfFlags; ++j) {
         if (GET_BIT(flagIn[blockId].Flags, j) == 0) {

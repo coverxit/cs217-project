@@ -28,30 +28,30 @@
 #include "ConcurrentStream/ConcurrentInputStream.hpp"
 #include "ConcurrentStream/ConcurrentOutputStream.hpp"
 
-void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int64_t inSize, const char* outFile)
+void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* outFile)
 {
     auto outBuf = new uint8_t[inSize];
 
-    int64_t nFlagBlocks = (inSize - 1) / DataBlockSize + 1;
-    int64_t flagBlocks = new CompressFlagBlock[nFlagBlocks];
+    auto nFlagBlocks = (inSize - 1) / DataBlockSize + 1;
+    auto flagBlocks = new CompressFlagBlock[nFlagBlocks];
     
     CompressedFileHeader header{ DefaultMagic, inSize };
-    int64_t outSize, flagSize;
+    int outSize, flagSize;
 
     printf("Compressing...\n");
     memset(flagBlocks, 0, sizeof(CompressFlagBlock) * nFlagBlocks);
 
     auto retVal = lzss->compress(inBuf, inSize, outBuf, outSize, flagBlocks, nFlagBlocks, flagSize);
     if (retVal.first) {
-        std::vector<std::pair<int64_t, int64_t>> offsets;
-        std::vector<int64_t> sizes;
+        std::vector<std::pair<int, int>> offsets;
+        std::vector<int> sizes;
         ConcurrentOutputStream outStream(outFile, outSize + flagSize + sizeof(CompressedFileHeader));
 
         if (outStream) {
             printf("Writing to file %s...\n", outFile);
             outStream.writeNext((uint8_t*)&header, sizeof(CompressedFileHeader), 1);
 
-            for (int64_t i = 0, offset = 0; i < nFlagBlocks; ++i) {
+            for (int i = 0, offset = 0; i < nFlagBlocks; ++i) {
                 outStream.writeNext((uint8_t*)&flagBlocks[i].NumOfFlags, sizeof(CompressFlagBlock::NumOfFlags), 1);
                 outStream.writeNext((uint8_t*)&flagBlocks[i].CompressedSize, sizeof(CompressFlagBlock::CompressedSize), 1);
                 outStream.writeNext(flagBlocks[i].Flags, SIZE_OF_FLAGS(flagBlocks[i].NumOfFlags), 1);
@@ -67,15 +67,15 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int64_t inSize, const ch
         }
     }
 
-    int64_t headerSize = flagSize + (int64_t)sizeof(CompressedFileHeader);
-    int64_t totalOutSize = outSize + headerSize;
+    auto headerSize = flagSize + (int)sizeof(CompressedFileHeader);
+    auto totalOutSize = outSize + headerSize;
 
     printf("============== Statistics ==============\n");
-    printf("In:            %10" PRId64 " bytes\n", inSize);
-    printf("Out:           %10" PRId64 " bytes\n", totalOutSize);
-    printf(" - Header:     %10" PRId64 " bytes\n", headerSize);
-    printf(" - Content:    %10" PRId64 " bytes\n", outSize);
-    printf(" - # Blocks:   %10" PRId64 "\n", nFlagBlocks);
+    printf("In:            %10d bytes\n", inSize);
+    printf("Out:           %10d bytes\n", totalOutSize);
+    printf(" - Header:     %10d bytes\n", headerSize);
+    printf(" - Content:    %10d bytes\n", outSize);
+    printf(" - # Blocks:   %10d\n", nFlagBlocks);
     printf("Ratio:         %10.6f\n", (float) inSize / totalOutSize);
     printf("Time (Kernel): %10.6f secs\n", retVal.second);
 
@@ -83,7 +83,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int64_t inSize, const ch
     delete[] flagBlocks;
 }
 
-void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int64_t inSize, const char* outFile)
+void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* outFile)
 {
     CompressedFileHeader header = *(CompressedFileHeader*)inBuf;
 
@@ -93,14 +93,14 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int64_t inSize, const 
         return;
     }
 
-    int64_t outSize = header.OriginalSize;
-    int64_t nFlagBlocks = (outSize - 1) / DataBlockSize + 1;
-    int64_t offset = sizeof(CompressedFileHeader);
+    auto outSize = header.OriginalSize;
+    auto nFlagBlocks = (outSize - 1) / DataBlockSize + 1;
     auto flagBlocks = new CompressFlagBlock[nFlagBlocks];
+    int offset = sizeof(CompressedFileHeader);
 
     memset(flagBlocks, 0, sizeof(CompressFlagBlock) * nFlagBlocks);
 
-    for (int64_t i = 0, dataOffset = 0; i < nFlagBlocks; ++i) {
+    for (int i = 0, dataOffset = 0; i < nFlagBlocks; ++i) {
         flagBlocks[i].NumOfFlags = *(uint16_t*)(inBuf + offset);
         offset += sizeof(CompressFlagBlock::NumOfFlags);
 
@@ -127,11 +127,11 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int64_t inSize, const 
     }
 
     printf("============== Statistics ==============\n");
-    printf("In:            %10" PRId64 " bytes\n", inSize);
-    printf(" - Header:     %10" PRId64 " bytes\n", offset);
-    printf(" - Content:    %10" PRId64 " bytes\n", inSize - offset);
-    printf(" - # Blocks:   %10" PRId64 "\n", nFlagBlocks);
-    printf("Out:           %10" PRId64 " bytes\n", outSize);
+    printf("In:            %10d bytes\n", inSize);
+    printf(" - Header:     %10d bytes\n", offset);
+    printf(" - Content:    %10d bytes\n", inSize - offset);
+    printf(" - # Blocks:   %10d\n", nFlagBlocks);
+    printf("Out:           %10d bytes\n", outSize);
     printf("Ratio:         %10.6f\n", (float) outSize / inSize);
     printf("Time (Kernel): %10.6f secs\n", retVal.second);
 
