@@ -46,7 +46,7 @@ __global__ void DecompressKernel(CompressFlagBlock* deviceFlagIn, int nFlagBlock
                     ++outOffset;
                 }
 
-                inOffset += 2;
+                inOffset += sizeof(PairType);
             }
         }
 
