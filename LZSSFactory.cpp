@@ -23,4 +23,6 @@ AbstractLZSS* AbstractLZSS::create(const char* type)
         return new CUDALZSS;
 #endif
     }
+
+    return nullptr;
 }
