@@ -13,17 +13,26 @@ done
 for d in ${corpus[@]}; do
     for f in ${d}/*; do
         if [ -f "${f}" ]; then
-            for i in "${!flags[@]}"; do
-                echo "[${modes[$i]}] Testing ${f}..."
+            checksum=$(sha1sum ${f} | cut -f1 -d' ')
+            echo "Testing ${f}... SHA1: ${checksum}"
 
+            for i in "${!flags[@]}"; do
                 rm -f tmp.comp
                 rm -f tmp.decomp
 
                 ${exec} c${flags[$i]} ${f} tmp.comp >> ${logs[$i]}
                 echo '----------------------------------------------------------------------------------' >> ${logs[$i]}
+                comp_checksum=$(sha1sum tmp.comp | cut -f1 -d' ')
+                echo "[${modes[$i]}] Compression SHA1: ${comp_checksum}"
 
                 ${exec} d${flags[$i]} tmp.comp tmp.decomp > /dev/null
-                diff ${f} tmp.decomp
+                decomp_checksum=$(sha1sum tmp.decomp | cut -f1 -d' ')
+                
+                if [ "${checksum}" - eq "${decomp_checksum}" ]; then
+                    echo "[${modes[$i]}] Decompression SHA1: ${decomp_checksum}, Match: Yes"
+                else
+                    echo "[${modes[$i]}] Decompression SHA1: ${decomp_checksum}, Match: No"
+                fi
             done
         fi
     done
