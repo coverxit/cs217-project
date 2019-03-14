@@ -40,8 +40,8 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int i
 
     // Process block in parallel
     timer.begin();
+    auto chunk = (nFlagBlocks - 1) / nThreads + 1;
     for (int i = 0; i < nThreads; ++i) {
-        auto chunk = (nFlagBlocks - 1) / nThreads + 1;
         auto offset = chunk * i;
         auto length = std::min(chunk, nFlagBlocks - offset);
 
@@ -97,8 +97,8 @@ std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn
 
     // Process block in parallel
     timer.begin();
+    auto chunk = (nFlagBlocks - 1) / nThreads + 1;
     for (int i = 0; i < nThreads; ++i) {
-        auto chunk = (nFlagBlocks - 1) / nThreads + 1;
         auto offset = chunk * i;
         auto length = std::min(chunk, nFlagBlocks - offset);
 
