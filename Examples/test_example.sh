@@ -1,6 +1,6 @@
 #!/bin/bash
 
-exec=../bin/lzss_gcc
+exec=../bin/lzss_nvcc
 corpus=(canterbury_corpus large_corpus miscellaneous_corpus)
 logs=(cpu_st.comp.log cpu_mt.comp.log gpu.comp.log)
 flags=(s m g)
