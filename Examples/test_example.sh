@@ -28,3 +28,6 @@ for d in ${corpus[@]}; do
         fi
     done
 done
+
+rm -f tmp.comp
+rm -f tmp.decomp
