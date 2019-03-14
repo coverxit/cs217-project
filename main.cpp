@@ -243,7 +243,9 @@ int main(int argc, char const* argv[])
                 decompress(lzss, inBuf, inStream.size(), argv[3]);
                 break;
             }
+
             printf("Time (Program): %10.6f secs\n", timerProgram.end());
+            delete lzss;
         }
 
         delete[] inBuf;
