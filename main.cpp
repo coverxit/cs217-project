@@ -22,6 +22,7 @@
 
 #include "BitHelper.h"
 #include "LZSSInterface.h"
+#include "TimerHelper.hpp"
 
 #include "ConcurrentStream/ConcurrentStream.hpp"
 
@@ -71,13 +72,13 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
     auto totalOutSize = outSize + headerSize;
 
     printf("============== Statistics ==============\n");
-    printf("In:            %10d bytes\n", inSize);
-    printf("Out:           %10d bytes\n", totalOutSize);
-    printf(" - Header:     %10d bytes\n", headerSize);
-    printf(" - Content:    %10d bytes\n", outSize);
-    printf(" - # Blocks:   %10d\n", nFlagBlocks);
-    printf("Ratio:         %10.6f\n", (float) inSize / totalOutSize);
-    printf("Time (Kernel): %10.6f secs\n", retVal.second);
+    printf("In:             %10d bytes\n", inSize);
+    printf("Out:            %10d bytes\n", totalOutSize);
+    printf(" - Header:      %10d bytes\n", headerSize);
+    printf(" - Content:     %10d bytes\n", outSize);
+    printf(" - # Blocks:    %10d\n", nFlagBlocks);
+    printf("Ratio:          %10.6f\n", (float) inSize / totalOutSize);
+    printf("Time (Kernel):  %10.6f secs\n", retVal.second);
 
     delete[] outBuf;
     delete[] flagBlocks;
@@ -127,13 +128,13 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
     }
 
     printf("============== Statistics ==============\n");
-    printf("In:            %10d bytes\n", inSize);
-    printf(" - Header:     %10d bytes\n", offset);
-    printf(" - Content:    %10d bytes\n", inSize - offset);
-    printf(" - # Blocks:   %10d\n", nFlagBlocks);
-    printf("Out:           %10d bytes\n", outSize);
-    printf("Ratio:         %10.6f\n", (float) outSize / inSize);
-    printf("Time (Kernel): %10.6f secs\n", retVal.second);
+    printf("In:             %10d bytes\n", inSize);
+    printf(" - Header:      %10d bytes\n", offset);
+    printf(" - Content:     %10d bytes\n", inSize - offset);
+    printf(" - # Blocks:    %10d\n", nFlagBlocks);
+    printf("Out:            %10d bytes\n", outSize);
+    printf("Ratio:          %10.6f\n", (float) outSize / inSize);
+    printf("Time (Kernel):  %10.6f secs\n", retVal.second);
 
     delete[] flagBlocks;
     delete[] outBuf;
@@ -201,6 +202,7 @@ int main(int argc, char const* argv[])
 
     ConcurrentInputStream inStream(argv[2]);
     if (inStream) {
+        Timer timerProgram;
         auto inBuf = new uint8_t[inStream.size()];
 
         printf("Reading from file %s...\n", argv[2]);
@@ -238,6 +240,7 @@ int main(int argc, char const* argv[])
                 decompress(lzss, inBuf, inStream.size(), argv[3]);
                 break;
             }
+            printf("Time (Program): %10.6f secs\n", timerProgram.end());
         }
 
         delete[] inBuf;
