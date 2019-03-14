@@ -13,7 +13,6 @@ done
 for d in ${corpus[@]}; do
     for f in ${d}/*; do
         if [ -f "${f}" ]; then
-            echo "----------------------------------------------------------------------------"
             checksum=$(sha1sum ${f} | cut -f1 -d' ')
             echo "Testing ${f}..."
             echo "Original SHA1: ${checksum}"
