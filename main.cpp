@@ -3,9 +3,10 @@
 #include <thread>
 #include <vector>
 
-#include <stdio.h>
-#include <stdint.h>
+#include <math.h>
 #include <memory.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -63,7 +64,7 @@ void compress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char* 
                 offset += flagBlocks[i].CompressedSize;
             }
 
-            outStream.writeNext(outBuf, offsets, sizes, std::thread::hardware_concurrency() - 1);
+            outStream.writeNext(outBuf, offsets, sizes, std::thread::hardware_concurrency());
             outStream.close();
         }
     }
@@ -122,7 +123,7 @@ void decompress(AbstractLZSS* lzss, const uint8_t* inBuf, int inSize, const char
 
         if (outStream) {
             printf("Writing to file %s...\n", outFile);
-            outStream.writeNext(outBuf, outSize, std::thread::hardware_concurrency() - 1);
+            outStream.writeNext(outBuf, outSize, std::thread::hardware_concurrency());
             outStream.close();
         }
     }
@@ -206,7 +207,7 @@ int main(int argc, char const* argv[])
         auto inBuf = new uint8_t[inStream.size()];
 
         printf("Reading from file %s...\n", argv[2]);
-        if (inStream.read(inBuf, inStream.size(), std::thread::hardware_concurrency() - 1)) {
+        if (inStream.read(inBuf, inStream.size(), std::thread::hardware_concurrency())) {
             AbstractLZSS* lzss = nullptr;
             switch (kernel) {
             case 's':
