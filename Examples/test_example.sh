@@ -7,7 +7,7 @@ flags=(s m g)
 modes=(CPU-ST CPU-MT GPU)
 
 if [ ! -f exec ]; then
-    echo "Please compile first!"
+    echo "Please compile the program first!"
     exit 1
 fi
 
