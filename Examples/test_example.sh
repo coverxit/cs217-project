@@ -6,6 +6,11 @@ logs=(cpu_st.comp.log cpu_mt.comp.log gpu.comp.log)
 flags=(s m g)
 modes=(CPU-ST CPU-MT GPU)
 
+if [ ! -f exec ]; then
+    echo "Please compile first!"
+    exit 1
+fi
+
 for l in ${logs[@]}; do
     rm -f ${l}
 done
