@@ -28,7 +28,7 @@ for d in ${corpus[@]}; do
                 ${exec} d${flags[$i]} tmp.comp tmp.decomp > /dev/null
                 decomp_checksum=$(sha1sum tmp.decomp | cut -f1 -d' ')
                 
-                if [ "${checksum}" - eq "${decomp_checksum}" ]; then
+                if [ "${checksum}" -eq "${decomp_checksum}" ]; then
                     echo "[${modes[$i]}] Decompression SHA1: ${decomp_checksum}, Match: Yes"
                 else
                     echo "[${modes[$i]}] Decompression SHA1: ${decomp_checksum}, Match: No"
