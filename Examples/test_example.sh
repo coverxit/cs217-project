@@ -13,6 +13,7 @@ done
 for d in ${corpus[@]}; do
     for f in ${d}/*; do
         if [ -f "${f}" ]; then
+            echo "----------------------------------------------------------------------------"
             checksum=$(sha1sum ${f} | cut -f1 -d' ')
             echo "Testing ${f}..."
             echo "Original SHA1: ${checksum}"
@@ -36,6 +37,7 @@ for d in ${corpus[@]}; do
                     echo "    Decompression SHA1: ${decomp_checksum}, Match: No"
                 fi
             done
+            echo "----------------------------------------------------------------------------"
         fi
     done
 done
