@@ -3,7 +3,6 @@
 #include <thread>
 #include <vector>
 
-#include <math.h>
 #include <memory.h>
 #include <stdint.h>
 #include <stdio.h>

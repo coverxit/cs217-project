@@ -2,7 +2,6 @@
 #include <thread>
 #include <vector>
 
-#include <math.h>
 #include <memory.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -41,10 +40,10 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int i
 
     // Process block in parallel
     timer.begin();
-    auto chunk = (size_t) floor((double) nFlagBlocks / nThreads);
+    int chunk = (nFlagBlocks - 1) / nThreads + 1;
     for (int i = 0; i < nThreads; ++i) {
-        auto offset = chunk * i;
-        auto length = std::min(chunk, nFlagBlocks - offset);
+        int offset = chunk * i;
+        int length = std::min(chunk, nFlagBlocks - offset);
 
         threads.emplace_back([&, offset, length]() {
             int tempOutSize = 0, tempFlagSize = 0;
@@ -98,10 +97,10 @@ std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn
 
     // Process block in parallel
     timer.begin();
-    auto chunk = (size_t) floor((double) nFlagBlocks / nThreads);
+    int chunk = (nFlagBlocks - 1) / nThreads + 1;
     for (int i = 0; i < nThreads; ++i) {
-        auto offset = chunk * i;
-        auto length = std::min(chunk, nFlagBlocks - offset);
+        int offset = chunk * i;
+        int length = std::min(chunk, nFlagBlocks - offset);
 
         threads.emplace_back([&, offset, length]() {
             for (int j = offset; j < offset + length; ++j) {
