@@ -24,7 +24,16 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int i
     std::atomic_int atomicOutSize(0), atomicFlagSize(0), atomicBlocksDone(0);
 
     auto nThreads = std::thread::hardware_concurrency() - 1;
-    nThreads = std::min((nFlagBlocks - 1) / nThreads + 1, nThreads);
+
+    // Too many threads?
+    if (nThreads > nFlagBlocks) {
+        nThreads = nFlagBlocks;
+    }
+
+    // Left over?
+    if (nFlagBlocks % nThreads) {
+        ++nThreads;
+    }
 
     std::vector<std::thread> threads;
     threads.reserve(nThreads);
@@ -72,7 +81,16 @@ std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn
     Timer timer(false);
     
     auto nThreads = std::thread::hardware_concurrency() - 1;
-    nThreads = std::min((nFlagBlocks - 1) / nThreads + 1, nThreads);
+
+    // Too many threads?
+    if (nThreads > nFlagBlocks) {
+        nThreads = nFlagBlocks;
+    }
+
+    // Left over?
+    if (nFlagBlocks % nThreads) {
+        ++nThreads;
+    }
 
     std::vector<std::thread> threads;
     threads.reserve(nThreads);
