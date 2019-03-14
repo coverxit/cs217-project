@@ -121,7 +121,7 @@ protected:
         int chunk = (size - 1) / nThreads + 1;
         for (int i = 0; i < nThreads; ++i) {
             int offset = chunk * i;
-            int length = std::min(chunk, offsets.size() - offset);
+            int length = std::min(chunk, (int) offsets.size() - offset);
 
             threads.emplace_back([&offsets, &sizes, dst, src, offset, length, &size] {
                 for (int j = offset; j < offset + length; ++j) {
