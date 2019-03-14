@@ -72,10 +72,9 @@ protected:
         threads.reserve(nThreads);
 
         // Read/write file in parallel
-        int chunk = (size - 1) / nThreads + 1;
         for (int i = 0; i < nThreads; ++i) {
-            int offset = chunk * i;
-            int length = std::min(chunk, size - offset);
+            int offset = CHUNK_LOW(i, size, nThreads);
+            int length = CHUNK_SIZE(i, size, nThreads);
 
             threads.emplace_back([=] {
                 memcpy(dst + offset, src + offset, length);
@@ -118,10 +117,9 @@ protected:
         threads.reserve(nThreads);
 
         // Read/write file in parallel
-        int chunk = (size - 1) / nThreads + 1;
         for (int i = 0; i < nThreads; ++i) {
-            int offset = chunk * i;
-            int length = std::min(chunk, (int) offsets.size() - offset);
+            int offset = CHUNK_LOW(i, offsets.size(), nThreads);
+            int length = CHUNK_SIZE(i, offsets.size(), nThreads);
 
             threads.emplace_back([&offsets, &sizes, dst, src, offset, length, &size] {
                 for (int j = offset; j < offset + length; ++j) {
