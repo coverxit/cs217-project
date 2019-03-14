@@ -210,10 +210,12 @@ int main(int argc, char const* argv[])
             AbstractLZSS* lzss = nullptr;
             switch (kernel) {
             case 's':
+                printf("Kernel: CPU single-thread\n");
                 lzss = AbstractLZSS::create("CPUST");
                 break;
 
             case 'm':
+                printf("Kernel: CPU multi-thread\n");
                 lzss = AbstractLZSS::create("CPUMT");
                 break;
 
@@ -225,6 +227,7 @@ int main(int argc, char const* argv[])
                 inStream.close();
                 return 1;
 #else
+                printf("Kernel: GPU\n");
                 lzss = AbstractLZSS::create("CUDA");
 #endif
                 break;
