@@ -16,7 +16,7 @@
     ((numFlags) - 1) / 8 + 1
 
 #define CHUNK_LOW(idx, total, nThreads) \
-    ((idx) * (total) / (nThreads))
+    ((idx) * (int64_t)(total) / (nThreads))
 
 #define CHUNK_SIZE(idx, total, nThreads) \
     (CHUNK_LOW((idx) + 1, total, nThreads) - CHUNK_LOW(idx, total, nThreads))
