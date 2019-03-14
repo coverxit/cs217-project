@@ -18,7 +18,7 @@ for d in ${corpus[@]}; do
             echo "Original SHA1: ${checksum}"
 
             for i in "${!flags[@]}"; do
-                echo "  Running [${modes[$i]}]..."
+                echo "  Running kernel ${modes[$i]}..."
                 rm -f tmp.comp
                 rm -f tmp.decomp
 
