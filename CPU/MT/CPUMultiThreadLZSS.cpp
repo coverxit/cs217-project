@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "../../BitHelper.h"
 #include "../../Settings.h"
 
 #include "../../LZSSInterface.h"
@@ -40,10 +41,9 @@ std::pair<bool, double> CPUMultiThreadLZSS::compress(const uint8_t* inBuf, int i
 
     // Process block in parallel
     timer.begin();
-    int chunk = (nFlagBlocks - 1) / nThreads + 1;
     for (int i = 0; i < nThreads; ++i) {
-        int offset = chunk * i;
-        int length = std::min(chunk, nFlagBlocks - offset);
+        int offset = CHUNK_LOW(i, nFlagBlocks, nThreads);
+        int length = CHUNK_SIZE(i, nFlagBlocks, nThreads);
 
         threads.emplace_back([&, offset, length]() {
             int tempOutSize = 0, tempFlagSize = 0;
@@ -97,10 +97,9 @@ std::pair<bool, double> CPUMultiThreadLZSS::decompress(CompressFlagBlock* flagIn
 
     // Process block in parallel
     timer.begin();
-    int chunk = (nFlagBlocks - 1) / nThreads + 1;
     for (int i = 0; i < nThreads; ++i) {
-        int offset = chunk * i;
-        int length = std::min(chunk, nFlagBlocks - offset);
+        int offset = CHUNK_LOW(i, nFlagBlocks, nThreads);
+        int length = CHUNK_SIZE(i, nFlagBlocks, nThreads);
 
         threads.emplace_back([&, offset, length]() {
             for (int j = offset; j < offset + length; ++j) {
