@@ -18,8 +18,9 @@ done
 for d in ${corpus[@]}; do
     for f in ${d}/*; do
         if [ -f "${f}" ]; then
-            checksum=$(sha1sum ${f} | cut -f1 -d' ')
             echo "Testing ${f}..."
+            
+            checksum=$(sha1sum ${f} | cut -f1 -d' ')
             echo "Original SHA1: ${checksum}"
 
             for i in "${!flags[@]}"; do
