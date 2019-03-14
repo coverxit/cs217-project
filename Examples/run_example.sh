@@ -19,7 +19,7 @@ for d in ${corpus[@]}; do
                 rm -f tmp.decomp
 
                 ../bin/lzss_nvcc c${flags[$i]} ${f} tmp.comp >> ${logs[$i]}
-                echo '----------------------------------------------------------------------------------' >> ${logs[$i]}
+                echo '------------------------------------------------------------' >> ${logs[$i]}
 
                 ../bin/lzss_nvcc d${flags[$i]} tmp.comp tmp.decomp > /dev/null
                 diff ${f} tmp.decomp
