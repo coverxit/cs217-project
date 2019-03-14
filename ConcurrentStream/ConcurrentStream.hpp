@@ -118,7 +118,7 @@ protected:
         threads.reserve(nThreads);
 
         // Read/write file in parallel
-        auto chunk = (long) floor((double) offesets.size() / nThreads);
+        auto chunk = (long) floor((double) offsets.size() / nThreads);
         for (int i = 0; i < nThreads; ++i) {
             auto offset = chunk * i;
             auto length = std::min(chunk, offsets.size() - offset);
