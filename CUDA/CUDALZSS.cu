@@ -53,7 +53,7 @@ std::pair<bool, double> CUDALZSS::compress(const uint8_t* inBuf, int inSize,
     }
     printf("Number of GPUs used: %d\n", numOfGPUs);
 
-    auto numOfKernels = std::min(nFlagBlocks / numOfGPUs, numOfGPUs);
+    auto numOfKernels = std::min((nFlagBlocks - 1) / numOfGPUs + 1, numOfGPUs);
     auto blocksPerKernel = (nFlagBlocks - 1) / numOfKernels + 1;
     auto alignedKernelSize = blocksPerKernel * DataBlockSize;
 
@@ -227,7 +227,7 @@ std::pair<bool, double> CUDALZSS::decompress(CompressFlagBlock* flagIn, int nFla
     printf("Number of GPUs used: %d\n", numOfGPUs);
 
     auto totalGPUBlocks = (nFlagBlocks - 1) / GPUBlockSize + 1;
-    auto numOfKernels = std::min(totalGPUBlocks / numOfGPUs, numOfGPUs);
+    auto numOfKernels = std::min((totalGPUBlocks - 1) / numOfGPUs + 1, numOfGPUs);
     auto gpuBlocksPerKernel = (totalGPUBlocks - 1) / numOfKernels + 1;
     auto dataBlocksPerKernel = gpuBlocksPerKernel * GPUBlockSize;
     auto alignedKernelSize = dataBlocksPerKernel * DataBlockSize;
