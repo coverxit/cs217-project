@@ -2,7 +2,8 @@
 
 exec=../bin/lzss_nvcc
 corpus=(canterbury_corpus large_corpus miscellaneous_corpus)
-logs=(cpu_st.comp.log cpu_mt.comp.log gpu.comp.log)
+comp_logs=(cpu_st.comp.log cpu_mt.comp.log gpu.comp.log)
+decomp_logs=(cpu_st.decomp.log cpu_mt.decomp.log gpu.decomp.log)
 flags=(s m g)
 modes=(CPU-ST CPU-MT GPU)
 tmp_comp=tmp.comp
@@ -13,8 +14,9 @@ if [ ! -f ${exec} ]; then
     exit 1
 fi
 
-for l in ${logs[@]}; do
-    rm -f ${l}
+for i in "${!comp_logs[@]}"; do
+    rm -f ${comp_logs[$i]}
+    rm -f ${decomp_logs[$i]}
 done
 
 for d in ${corpus[@]}; do
@@ -30,12 +32,12 @@ for d in ${corpus[@]}; do
                 rm -f ${tmp_comp}
                 rm -f ${tmp_decomp}
 
-                ${exec} c${flags[$i]} ${f} ${tmp_comp} >> ${logs[$i]}
+                ${exec} c${flags[$i]} ${f} ${tmp_comp} >> ${comp_logs[$i]}
                 echo '----------------------------------------------------------------------------------' >> ${logs[$i]}
                 comp_checksum=$(sha1sum ${tmp_comp} | cut -f1 -d' ')
                 echo "    Compression SHA1:   ${comp_checksum}"
 
-                ${exec} d${flags[$i]} ${tmp_comp} ${tmp_decomp} > /dev/null
+                ${exec} d${flags[$i]} ${tmp_comp} ${tmp_decomp} >> ${decomp_logs[$i]}
                 decomp_checksum=$(sha1sum ${tmp_decomp} | cut -f1 -d' ')
                 
                 if [ "${checksum}" == "${decomp_checksum}" ]; then
