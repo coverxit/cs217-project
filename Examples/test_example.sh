@@ -2,8 +2,8 @@
 
 exec=../bin/lzss_nvcc
 corpus=(canterbury_corpus large_corpus miscellaneous_corpus)
-comp_logs=(cpu_st.comp.log cpu_mt.comp.log gpu.comp.log)
-decomp_logs=(cpu_st.decomp.log cpu_mt.decomp.log gpu.decomp.log)
+comp_logs=(examples_cpu_st.comp.log examples_cpu_mt.comp.log examples_gpu.comp.log)
+decomp_logs=(examples_cpu_st.decomp.log examples_cpu_mt.decomp.log examples_gpu.decomp.log)
 flags=(s m g)
 modes=(CPU-ST CPU-MT GPU)
 tmp_comp=tmp.comp
