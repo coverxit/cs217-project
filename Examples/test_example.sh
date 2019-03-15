@@ -32,11 +32,13 @@ for d in ${corpus[@]}; do
                 rm -f ${tmp_comp}
                 rm -f ${tmp_decomp}
 
+                echo "Test compressing on ${f}..." >> ${comp_logs[$i]}
                 ${exec} c${flags[$i]} ${f} ${tmp_comp} >> ${comp_logs[$i]}
                 echo '----------------------------------------------------------------------------------' >> ${comp_logs[$i]}
                 comp_checksum=$(sha1sum ${tmp_comp} | cut -f1 -d' ')
                 echo "    Compression SHA1:   ${comp_checksum}"
 
+                echo "Test decompressing on ${f}..." >> ${decomp_logs[$i]}
                 ${exec} d${flags[$i]} ${tmp_comp} ${tmp_decomp} >> ${decomp_logs[$i]}
                 echo '----------------------------------------------------------------------------------' >> ${decomp_logs[$i]}
                 decomp_checksum=$(sha1sum ${tmp_decomp} | cut -f1 -d' ')
