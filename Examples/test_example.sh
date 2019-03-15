@@ -33,11 +33,12 @@ for d in ${corpus[@]}; do
                 rm -f ${tmp_decomp}
 
                 ${exec} c${flags[$i]} ${f} ${tmp_comp} >> ${comp_logs[$i]}
-                echo '----------------------------------------------------------------------------------' >> ${logs[$i]}
+                echo '----------------------------------------------------------------------------------' >> ${comp_logs[$i]}
                 comp_checksum=$(sha1sum ${tmp_comp} | cut -f1 -d' ')
                 echo "    Compression SHA1:   ${comp_checksum}"
 
                 ${exec} d${flags[$i]} ${tmp_comp} ${tmp_decomp} >> ${decomp_logs[$i]}
+                echo '----------------------------------------------------------------------------------' >> ${decomp_logs[$i]}
                 decomp_checksum=$(sha1sum ${tmp_decomp} | cut -f1 -d' ')
                 
                 if [ "${checksum}" == "${decomp_checksum}" ]; then
